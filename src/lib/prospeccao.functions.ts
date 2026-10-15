@@ -87,9 +87,10 @@ export const discardBusiness=createServerFn({method:'POST'}).middleware([require
  await assertOwner(context.supabase);const {error}=await context.supabase.rpc('discard_place',{p_place:data.placeId});
  if(error)throw new Error('Não foi possível descartar a empresa.');return {ok:true};
 });
-export const restoreSearch=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
+export const restoreSearch=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>z.object({id:z.string().uuid().optional()}).parse(input)).handler(async({data,context})=>{
  const db=context.supabase;await assertOwner(db);
- const found=await db.from('searches').select('*').order('updated_at',{ascending:false}).limit(1).maybeSingle();
+ const q=db.from('searches').select('*');
+ const found=data.id?await q.eq('id',data.id).maybeSingle():await q.order('updated_at',{ascending:false}).limit(1).maybeSingle();
  if(found.error)throw new Error(`Não foi possível carregar a última busca. (${found.error.message})`);
  if(!found.data)return {search:null,batch:[] as Business[]};
  const rows=await db.from('reserves').select('shown_at,businesses(*)').eq('search_id',found.data.id).not('shown_at','is',null).order('shown_at',{ascending:true});

@@ -60,3 +60,19 @@
   .detail-grid { grid-template-columns: 1fr; }
  }
 }
+
+@layer components {
+ a, .nav-item { transition: color 150ms ease-out, border-color 150ms ease-out, background-color 150ms ease-out; }
+ .nav-item:hover { color: var(--foreground); }
+ .card-enter { animation: card-in 200ms ease-out both; }
+ .card-leaving { opacity: 0; transition: opacity 180ms ease-out; pointer-events: none; }
+ .loading-text { animation: soft-pulse 1.6s ease-in-out infinite; }
+ .fade-swap { animation: fade-swap 180ms ease-out; }
+}
+@keyframes card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes soft-pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+@keyframes fade-swap { from { opacity: .4; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+ .card-enter, .loading-text, .fade-swap { animation: none; }
+ .card-leaving, a, .nav-item { transition: none; }
+}

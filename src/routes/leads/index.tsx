@@ -19,7 +19,7 @@ function LeadsPage() {
   if (leads.isLoading)
     return (
       <div className="app-container py-24">
-        <p className="text-muted-foreground">Carregando leads...</p>
+        <p className="loading-text text-muted-foreground">Carregando leads...</p>
       </div>
     );
 
@@ -27,6 +27,9 @@ function LeadsPage() {
     return (
       <div className="app-container py-24">
         <p className="text-destructive">Não foi possível carregar os leads.</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {leads.error instanceof Error ? leads.error.message : String(leads.error)}
+        </p>
       </div>
     );
 
@@ -53,9 +56,10 @@ function LeadsPage() {
           return (
             <Link
               key={business.id}
+              style={{ animationDelay: `${Math.min(rows.indexOf(business), 9) * 40}ms` }}
               to="/leads/$id"
               params={{ id: business.id }}
-              className="business-card block hover:bg-accent"
+              className="business-card card-enter block transition-colors duration-150 hover:bg-muted hover:border-foreground/20"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-4">
                 <div>
