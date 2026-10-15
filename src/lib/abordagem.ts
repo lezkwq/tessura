@@ -39,7 +39,7 @@ export function mapsObservations(b: Business): string[] {
     'só WhatsApp': 'O campo de site do Maps leva ao WhatsApp',
     'só link na bio': 'O campo de site do Maps leva a uma página de link na bio',
   };
-  if (site[b.website_type]) out.push(site[b.website_type]);
+  const siteObs = site[b.website_type]; if (siteObs) out.push(siteObs);
   if (Array.isArray(d['openingHours']) && d['openingHours'].length) out.push('Os horários de funcionamento estão publicados no Maps');
   else out.push('O Maps não mostra horários de funcionamento');
   const photos = Array.isArray(d['imageUrls']) ? d['imageUrls'].length : 0;
