@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuditoriasRouteImport } from './routes/auditorias'
 import { Route as LeadsRouteRouteImport } from './routes/leads/route'
+import { Route as RegrasRouteImport } from './routes/regras'
 import { Route as LeadsIndexRouteImport } from './routes/leads/index'
 import { Route as LeadsIdRouteImport } from './routes/leads/$id'
 
@@ -19,9 +21,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuditoriasRoute = AuditoriasRouteImport.update({
+  id: '/auditorias',
+  path: '/auditorias',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeadsRouteRoute = LeadsRouteRouteImport.update({
   id: '/leads',
   path: '/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegrasRoute = RegrasRouteImport.update({
+  id: '/regras',
+  path: '/regras',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeadsIndexRoute = LeadsIndexRouteImport.update({
@@ -38,11 +50,15 @@ const LeadsIdRoute = LeadsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/leads': typeof LeadsRouteRouteWithChildren
+  '/auditorias': typeof AuditoriasRoute
+  '/regras': typeof RegrasRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/': typeof LeadsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auditorias': typeof AuditoriasRoute
+  '/regras': typeof RegrasRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads': typeof LeadsIndexRoute
 }
@@ -50,20 +66,32 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/leads': typeof LeadsRouteRouteWithChildren
+  '/auditorias': typeof AuditoriasRoute
+  '/regras': typeof RegrasRoute
   '/leads/$id': typeof LeadsIdRoute
   '/leads/': typeof LeadsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/leads' | '/leads/$id' | '/leads/'
+  fullPaths:
+    '/' | '/leads' | '/auditorias' | '/regras' | '/leads/$id' | '/leads/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/leads/$id' | '/leads'
-  id: '__root__' | '/' | '/leads' | '/leads/$id' | '/leads/'
+  to: '/' | '/auditorias' | '/regras' | '/leads/$id' | '/leads'
+  id:
+    | '__root__'
+    | '/'
+    | '/leads'
+    | '/auditorias'
+    | '/regras'
+    | '/leads/$id'
+    | '/leads/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LeadsRouteRoute: typeof LeadsRouteRouteWithChildren
+  AuditoriasRoute: typeof AuditoriasRoute
+  RegrasRoute: typeof RegrasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,11 +103,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auditorias': {
+      id: '/auditorias'
+      path: '/auditorias'
+      fullPath: '/auditorias'
+      preLoaderRoute: typeof AuditoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leads': {
       id: '/leads'
       path: '/leads'
       fullPath: '/leads'
       preLoaderRoute: typeof LeadsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/regras': {
+      id: '/regras'
+      path: '/regras'
+      fullPath: '/regras'
+      preLoaderRoute: typeof RegrasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leads/': {
@@ -116,6 +158,8 @@ const LeadsRouteRouteWithChildren = LeadsRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LeadsRouteRoute: LeadsRouteRouteWithChildren,
+  AuditoriasRoute: AuditoriasRoute,
+  RegrasRoute: RegrasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
