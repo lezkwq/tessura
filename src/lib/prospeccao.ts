@@ -24,6 +24,6 @@ export function weightedScore(rating: unknown, count: unknown): number {
 }
 export function placeData(value: Json): PlaceData { return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; }
 export function text(value: unknown): string { return typeof value === 'string' && value.trim() ? value : typeof value === 'number' ? String(value) : 'não informado'; }
-export function safeUrl(value: unknown): string | undefined { if (typeof value !== 'string') return; try { const u = new URL(value); if (['http:','https:'].includes(u.protocol)) return u.href; } catch { return; } }
-export function mapsUrl(b: Business): string { const d=placeData(b.data); return safeUrl(d.url) ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.place_id)}&query_place_id=${encodeURIComponent(b.place_id)}`; }
+export function safeUrl(value: unknown): string | undefined { if (typeof value !== 'string') return undefined; try { const u = new URL(value); if (['http:','https:'].includes(u.protocol)) return u.href; } catch { return undefined; } return undefined; }
+export function mapsUrl(b: Business): string { const d=placeData(b.data); return safeUrl(d['url']) ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.place_id)}&query_place_id=${encodeURIComponent(b.place_id)}`; }
 export function metadata(title: string, description: string) { return { meta: [{title: `${title} | Prospecção`},{name:'description',content:description},{property:'og:title',content:`${title} | Prospecção`},{property:'og:description',content:description},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary_large_image'}] }; }

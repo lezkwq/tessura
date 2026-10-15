@@ -40,9 +40,9 @@ export const pollSearch=createServerFn({method:'POST'}).middleware([requireSupab
  const rows=await readDataset(run.defaultDatasetId);
  // The row lock held by the import RPC makes polling and batch delivery idempotent.
  const candidates=rows.flatMap(row=>{
-  const kind=websiteType(row.website);
-  if(!kind||typeof row.placeId!=='string')return [];
-  return [{place_id:row.placeId,data:cleanPlace(row),website_type:kind,score:weightedScore(row.totalScore,row.reviewsCount)}];
+  const kind=websiteType(row['website']);
+  if(!kind||typeof row['placeId']!=='string')return [];
+  return [{place_id:row['placeId'],data:cleanPlace(row),website_type:kind,score:weightedScore(row['totalScore'],row['reviewsCount'])}];
  });
  const imported=await db.rpc('finish_search',{p_search:search.id,p_run:search.run_id,p_places:candidates});
  if(imported.error)throw new Error('Não foi possível guardar os resultados.');
@@ -77,7 +77,7 @@ export const pollLead=createServerFn({method:'POST'}).middleware([requireSupabas
  const run=await readRun(lead.enrichment_run_id);
  if(['FAILED','ABORTED','TIMED-OUT'].includes(run.status)){await db.from('businesses').update({enrichment_status:'failed'}).eq('id',lead.id);throw new Error('Não foi possível enriquecer o lead. Tente novamente.');}
  if(run.status!=='SUCCEEDED')return lead;
- const row=(await readDataset(run.defaultDatasetId)).find(r=>r.placeId===lead.place_id);
+ const row=(await readDataset(run.defaultDatasetId)).find(r=>r['placeId']===lead.place_id);
  if(!row){await db.from('businesses').update({enrichment_status:'failed'}).eq('id',lead.id);throw new Error('O Apify não devolveu os detalhes desta empresa.');}
  const saved=await db.from('businesses').update({data:cleanPlace(row),enrichment_status:'ready',updated_at:new Date().toISOString()}).eq('id',lead.id).select().single();
  if(!saved.data)throw new Error('Não foi possível salvar os detalhes.');return saved.data;
