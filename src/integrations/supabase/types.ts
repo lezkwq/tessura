@@ -197,6 +197,32 @@ export type Database = {
     }
     Functions: {
       discard_place: { Args: { p_place: string }; Returns: undefined }
+      finish_search: {
+        Args: { p_places: Json; p_run: string; p_search: string }
+        Returns: {
+          city: string
+          created_at: string
+          data: Json
+          enrichment_dataset_id: string | null
+          enrichment_run_id: string | null
+          enrichment_status: string
+          id: string
+          is_lead: boolean
+          niche: string
+          place_id: string
+          score: number
+          state: string
+          updated_at: string
+          user_id: string
+          website_type: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "businesses"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       is_owner: { Args: never; Returns: boolean }
       take_batch: {
         Args: { p_search: string }
