@@ -46,7 +46,7 @@ function SearchPage() {
   const busy = useRef(false);
   const alive = useRef(true);
 
-  useEffect(() => () => { alive.current = false; }, []);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const keyQuery = useQuery({ queryKey: ["apify-key"], queryFn: () => keyStatus() });
   const lastQuery = useQuery({ queryKey: ["latest-search"], queryFn: () => latestSearch() });
