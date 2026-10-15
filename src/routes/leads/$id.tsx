@@ -183,7 +183,7 @@ function LeadPage() {
         </p>
       )}
       {business.enrichment_status === "running" && (
-        <p role="status" className="mt-8 text-sm text-muted-foreground">
+        <p role="status" className="loading-text mt-8 text-sm text-muted-foreground">
           Carregando detalhes da empresa...
         </p>
       )}

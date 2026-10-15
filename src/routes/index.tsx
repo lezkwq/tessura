@@ -8,8 +8,8 @@ import {
   beginSearch,
   discardBusiness,
   keyStatus,
-  latestSearch,
   pollSearch,
+  restoreSearch,
 } from "@/lib/prospeccao.functions";
 import {
   mapsUrl,
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/")({
 });
 
 const emptyForm = { city: "", state: "SP", niche: "" };
+const ACTIVE_KEY = "prospeccao:busca-ativa";
 
 function SearchPage() {
   const queryClient = useQueryClient();
@@ -49,18 +50,42 @@ function SearchPage() {
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const keyQuery = useQuery({ queryKey: ["apify-key"], queryFn: () => keyStatus() });
-  const lastQuery = useQuery({ queryKey: ["latest-search"], queryFn: () => latestSearch() });
+  const [added, setAdded] = useState<Set<string>>(new Set());
+  const [leaving, setLeaving] = useState<Set<string>>(new Set());
+  const [restoring, setRestoring] = useState(true);
+
+  function remember(id: string) {
+    window.localStorage.setItem(ACTIVE_KEY, id);
+  }
+
+  function show(result: { search: Search | null; batch: Business[] }) {
+    if (!result.search) return;
+    setSearch(result.search);
+    setBatch(result.batch);
+    setAdded(new Set(result.batch.filter((b) => b.is_lead).map((b) => b.id)));
+    setForm({ city: result.search.city, state: result.search.state, niche: result.search.niche });
+    remember(result.search.id);
+  }
 
   useEffect(() => {
-    const last = lastQuery.data;
-    if (last && !form.city && !form.niche)
-      setForm({ city: last.city, state: last.state, niche: last.niche });
-  }, [lastQuery.data, form.city, form.niche]);
+    const stored = window.localStorage.getItem(ACTIVE_KEY);
+    if (stored === "none") { setRestoring(false); return; }
+    restoreSearch({ data: stored ? { id: stored } : {} })
+      .then((result) => { if (alive.current) show(result); })
+      .catch((e) => { if (alive.current) setError(e instanceof Error ? e.message : "Não foi possível restaurar a busca."); })
+      .finally(() => { if (alive.current) setRestoring(false); });
+  }, []);
+
+  function reset() {
+    window.localStorage.setItem(ACTIVE_KEY, "none");
+    setSearch(null); setBatch([]); setAdded(new Set()); setLeaving(new Set());
+    setForm(emptyForm); setStatus(""); setError(""); setConfirming("");
+  }
 
   const add = useMutation({
     mutationFn: (id: string) => addLead({ data: { id } }),
     onSuccess: (_result, id) => {
-      setBatch((rows) => rows.filter((row) => row.id !== id));
+      setAdded((prev) => new Set(prev).add(id));
       void queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
     onError: (e) => setError(e instanceof Error ? e.message : "Não foi possível adicionar o lead."),
@@ -69,8 +94,12 @@ function SearchPage() {
   const discard = useMutation({
     mutationFn: (placeId: string) => discardBusiness({ data: { placeId } }),
     onSuccess: (_result, placeId) => {
-      setBatch((rows) => rows.filter((row) => row.place_id !== placeId));
       setConfirming("");
+      setLeaving((prev) => new Set(prev).add(placeId));
+      setTimeout(() => {
+        if (!alive.current) return;
+        setBatch((rows) => rows.filter((row) => row.place_id !== placeId));
+      }, 190);
     },
     onError: (e) => setError(e instanceof Error ? e.message : "Não foi possível descartar a empresa."),
   });
@@ -95,8 +124,7 @@ function SearchPage() {
     try {
       let result = await beginSearch({ data: input });
       if (result.search.status === "running") result = await wait(result.search.id);
-      setSearch(result.search);
-      setBatch(result.batch);
+      show(await restoreSearch({ data: { id: result.search.id } }));
       setStatus(result.search.status === "exhausted" ? "Não há mais resultados para esta busca." : "");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível buscar.");
@@ -194,10 +222,20 @@ function SearchPage() {
               Mostrar mais 10
             </Button>
           )}
+          {search && (
+            <Button variant="quiet" type="button" disabled={pending} onClick={reset}>
+              Nova busca
+            </Button>
+          )}
         </div>
       </form>
+      {restoring && (
+        <p role="status" className="loading-text mb-8 text-sm text-muted-foreground">
+          Restaurando a última busca...
+        </p>
+      )}
       {status && (
-        <p role="status" className="mb-8 text-sm text-muted-foreground">
+        <p role="status" className={`${pending ? "loading-text " : ""}mb-8 text-sm text-muted-foreground`}>
           {status}
         </p>
       )}
@@ -208,12 +246,15 @@ function SearchPage() {
       )}
       {batch.length > 0 && (
         <div className="space-y-4">
-          {batch.map((business) => (
+          {batch.map((business, index) => (
             <BusinessCard
               key={business.id}
+              index={index}
               business={business}
+              added={added.has(business.id)}
+              leaving={leaving.has(business.place_id)}
               confirming={confirming === business.place_id}
-              busy={add.isPending || discard.isPending}
+              busy={(add.isPending && add.variables === business.id) || discard.isPending}
               onLead={() => add.mutate(business.id)}
               onAskDiscard={() => setConfirming(business.place_id)}
               onCancelDiscard={() => setConfirming("")}
@@ -222,7 +263,7 @@ function SearchPage() {
           ))}
         </div>
       )}
-      {!batch.length && !status && !error && search && (
+      {!batch.length && !status && !error && !restoring && search && (
         <div className="empty-region">
           <p className="text-muted-foreground">
             {search.status === "exhausted"
@@ -236,6 +277,9 @@ function SearchPage() {
 }
 
 function BusinessCard({
+  index,
+  added,
+  leaving,
   business,
   confirming,
   busy,
@@ -244,6 +288,9 @@ function BusinessCard({
   onCancelDiscard,
   onConfirmDiscard,
 }: {
+  index: number;
+  added: boolean;
+  leaving: boolean;
   business: Business;
   confirming: boolean;
   busy: boolean;
@@ -258,7 +305,10 @@ function BusinessCard({
   const website = safeUrl(data["website"]);
 
   return (
-    <article className="business-card">
+    <article
+      className={`business-card card-enter${leaving ? " card-leaving" : ""}`}
+      style={{ animationDelay: `${(index % 10) * 40}ms` }}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h2 className="text-base font-medium">{text(data["title"])}</h2>
         <span className="text-sm text-muted-foreground">{business.website_type}</span>
@@ -297,9 +347,15 @@ function BusinessCard({
             Abrir site
           </a>
         )}
-        <Button variant="solid" size="sm" disabled={busy} onClick={onLead}>
-          Adicionar aos leads
-        </Button>
+        {added ? (
+          <Button key="added" variant="bordered" size="sm" disabled className="fade-swap disabled:opacity-100">
+            Adicionado
+          </Button>
+        ) : (
+          <Button variant="solid" size="sm" disabled={busy} onClick={onLead}>
+            {busy ? "Adicionando..." : "Adicionar aos leads"}
+          </Button>
+        )}
         {confirming ? (
           <>
             <Button variant="danger" size="sm" disabled={busy} onClick={onConfirmDiscard}>
