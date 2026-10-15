@@ -1,7 +1,7 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { streamText, type ModelMessage } from 'ai';
 
-const MODEL = 'google/gemini-3.5-flash';
+const MODEL = 'google/gemini-3.8-flash';
 
 export async function askGemini(messages: ModelMessage[]): Promise<string> {
   const key = process.env['LOVABLE_API_KEY'];
