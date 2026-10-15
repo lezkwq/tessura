@@ -16,3 +16,4 @@
 - Manage the Apify credential through the project connector settings rather than runtime writes, because the app cannot mutate the project secret store safely.
 - Use one auth-state subscriber in the root provider and a private owner role assigned transactionally on first registration, because this tool permits exactly one account.
 - Restore the Busca screen from shown reserves in the database, with only the active search id kept in localStorage, because results must survive navigation and reloads.
+- Generate WhatsApp messages via Lovable AI in server functions and re-validate every output with pure code validators, because model output is untrusted.

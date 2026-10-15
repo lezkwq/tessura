@@ -22,6 +22,13 @@
       "when": 1792093170723,
       "tag": "0002_grant_table_access",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792095402689,
+      "tag": "0003_whatsapp_audits",
+      "breakpoints": true
     }
   ]
 }

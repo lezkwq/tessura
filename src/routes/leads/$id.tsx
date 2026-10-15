@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Gate } from "@/components/prospeccao/gate";
 import { discardBusiness, getLead, pollLead } from "@/lib/prospeccao.functions";
+import { Auditoria } from "@/components/prospeccao/auditoria";
 import { mapsUrl, metadata, placeData, safeUrl, text } from "@/lib/prospeccao";
 
 export const Route = createFileRoute("/leads/$id")({
@@ -276,6 +277,7 @@ function LeadPage() {
           </div>
         </div>
       )}
+      <Auditoria business={business} />
     </div>
   );
 }

@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      audits: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          message: string
+          observations: string[]
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          word_count: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          message: string
+          observations?: string[]
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          word_count?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          observations?: string[]
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          word_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audits_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocked_places: {
         Row: {
           place_id: string
@@ -77,6 +124,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           website_type?: string
+        }
+        Relationships: []
+      }
+      message_rules: {
+        Row: {
+          banned_words: string[]
+          instructions: string
+          max_words: number
+          min_words: number
+          opening: string
+          signer: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          banned_words?: string[]
+          instructions?: string
+          max_words?: number
+          min_words?: number
+          opening?: string
+          signer?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          banned_words?: string[]
+          instructions?: string
+          max_words?: number
+          min_words?: number
+          opening?: string
+          signer?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
