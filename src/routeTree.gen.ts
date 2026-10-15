@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadsRouteRouteImport } from './routes/leads/route'
 import { Route as LeadsIndexRouteImport } from './routes/leads/index'
+import { Route as LeadsIdRouteImport } from './routes/leads/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,28 +29,36 @@ const LeadsIndexRoute = LeadsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LeadsRouteRoute,
 } as any)
+const LeadsIdRoute = LeadsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => LeadsRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/leads': typeof LeadsRouteRouteWithChildren
+  '/leads/$id': typeof LeadsIdRoute
   '/leads/': typeof LeadsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/leads/$id': typeof LeadsIdRoute
   '/leads': typeof LeadsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/leads': typeof LeadsRouteRouteWithChildren
+  '/leads/$id': typeof LeadsIdRoute
   '/leads/': typeof LeadsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/leads' | '/leads/'
+  fullPaths: '/' | '/leads' | '/leads/$id' | '/leads/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/leads'
-  id: '__root__' | '/' | '/leads' | '/leads/'
+  to: '/' | '/leads/$id' | '/leads'
+  id: '__root__' | '/' | '/leads' | '/leads/$id' | '/leads/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -80,14 +89,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeadsIndexRouteImport
       parentRoute: typeof LeadsRouteRoute
     }
+    '/leads/$id': {
+      id: '/leads/$id'
+      path: '/$id'
+      fullPath: '/leads/$id'
+      preLoaderRoute: typeof LeadsIdRouteImport
+      parentRoute: typeof LeadsRouteRoute
+    }
   }
 }
 
 interface LeadsRouteRouteChildren {
+  LeadsIdRoute: typeof LeadsIdRoute
   LeadsIndexRoute: typeof LeadsIndexRoute
 }
 
 const LeadsRouteRouteChildren: LeadsRouteRouteChildren = {
+  LeadsIdRoute: LeadsIdRoute,
   LeadsIndexRoute: LeadsIndexRoute,
 }
 
