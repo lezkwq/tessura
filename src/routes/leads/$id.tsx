@@ -21,6 +21,35 @@ function items(value: unknown): string[] {
     : [];
 }
 
+function hourRows(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (typeof entry === "string") return entry.trim() ? [entry] : [];
+    if (entry && typeof entry === "object") {
+      const row = entry as Record<string, unknown>;
+      const day = typeof row["day"] === "string" ? row["day"] : null;
+      const hours = typeof row["hours"] === "string" ? row["hours"] : null;
+      if (day && hours) return [`${day}: ${hours}`];
+    }
+    return [];
+  });
+}
+
+function reviewRows(value: unknown): { id: string; head: string; text: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const row = entry as Record<string, unknown>;
+    const name = typeof row["name"] === "string" ? row["name"] : "Avaliação";
+    const stars = typeof row["stars"] === "number" ? `${row["stars"]} estrelas` : null;
+    const when = typeof row["publishAt"] === "string" ? row["publishAt"] : null;
+    const head = [name, stars, when].filter(Boolean).join(" · ");
+    const id = typeof row["reviewId"] === "string" ? row["reviewId"] : head;
+    const text = typeof row["text"] === "string" ? row["text"] : "";
+    return [{ id, head, text }];
+  });
+}
+
 function LeadPage() {
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
@@ -89,7 +118,8 @@ function LeadPage() {
     ...items(data["youtubes"]),
     ...items(data["tiktoks"]),
   ];
-  const hours = items(data["openingHours"]);
+  const hours = hourRows(data["openingHours"]);
+  const reviews = reviewRows(data["reviews"]).slice(0, 5);
   const photos = items(data["imageUrls"]).slice(0, 6);
   const website = safeUrl(data["website"]);
   const rating = typeof data["totalScore"] === "number" ? data["totalScore"].toFixed(1) : null;
@@ -192,6 +222,19 @@ function LeadPage() {
           <p className="mt-2">não informado</p>
         )}
       </div>
+      {reviews.length > 0 && (
+        <div className="mt-8 border-t border-border pt-8">
+          <p className="data-label">Avaliações recentes</p>
+          <ul className="mt-3 space-y-4">
+            {reviews.map((review) => (
+              <li key={review.id}>
+                <p className="text-sm text-muted-foreground">{review.head}</p>
+                {review.text && <p className="mt-1 text-sm">{review.text}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {emails.length > 0 && (
         <div className="mt-8 border-t border-border pt-8">
           <p className="data-label">Email</p>
