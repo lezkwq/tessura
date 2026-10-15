@@ -93,7 +93,7 @@ function LeadPage() {
   if (lead.isLoading)
     return (
       <div className="app-container py-24">
-        <p className="text-muted-foreground">Carregando lead...</p>
+        <p className="loading-text text-muted-foreground">Carregando lead...</p>
       </div>
     );
 
@@ -183,7 +183,7 @@ function LeadPage() {
         </p>
       )}
       {business.enrichment_status === "running" && (
-        <p role="status" className="mt-8 text-sm text-muted-foreground">
+        <p role="status" className="loading-text mt-8 text-sm text-muted-foreground">
           Carregando detalhes da empresa...
         </p>
       )}
