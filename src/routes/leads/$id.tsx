@@ -93,7 +93,7 @@ function LeadPage() {
   if (lead.isLoading)
     return (
       <div className="app-container py-24">
-        <p className="text-muted-foreground">Carregando lead...</p>
+        <p className="loading-text text-muted-foreground">Carregando lead...</p>
       </div>
     );
 
