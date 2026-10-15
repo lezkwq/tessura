@@ -14,13 +14,242 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blocked_places: {
+        Row: {
+          place_id: string
+        }
+        Insert: {
+          place_id: string
+        }
+        Update: {
+          place_id?: string
+        }
+        Relationships: []
+      }
+      businesses: {
+        Row: {
+          city: string
+          created_at: string
+          data: Json
+          enrichment_dataset_id: string | null
+          enrichment_run_id: string | null
+          enrichment_status: string
+          id: string
+          is_lead: boolean
+          niche: string
+          place_id: string
+          score: number
+          state: string
+          updated_at: string
+          user_id: string
+          website_type: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          data?: Json
+          enrichment_dataset_id?: string | null
+          enrichment_run_id?: string | null
+          enrichment_status?: string
+          id?: string
+          is_lead?: boolean
+          niche: string
+          place_id: string
+          score?: number
+          state: string
+          updated_at?: string
+          user_id: string
+          website_type: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          data?: Json
+          enrichment_dataset_id?: string | null
+          enrichment_run_id?: string | null
+          enrichment_status?: string
+          id?: string
+          is_lead?: boolean
+          niche?: string
+          place_id?: string
+          score?: number
+          state?: string
+          updated_at?: string
+          user_id?: string
+          website_type?: string
+        }
+        Relationships: []
+      }
+      reserves: {
+        Row: {
+          batch_id: string | null
+          business_id: string
+          created_at: string
+          id: string
+          search_id: string
+          shown_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          search_id: string
+          shown_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          search_id?: string
+          shown_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reserves_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reserves_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      searches: {
+        Row: {
+          city: string
+          created_at: string
+          dataset_id: string | null
+          id: string
+          niche: string
+          run_id: string | null
+          state: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          niche: string
+          run_id?: string | null
+          state: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          niche?: string
+          run_id?: string | null
+          state?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      discard_place: { Args: { p_place: string }; Returns: undefined }
+      finish_search: {
+        Args: { p_places: Json; p_run: string; p_search: string }
+        Returns: {
+          city: string
+          created_at: string
+          data: Json
+          enrichment_dataset_id: string | null
+          enrichment_run_id: string | null
+          enrichment_status: string
+          id: string
+          is_lead: boolean
+          niche: string
+          place_id: string
+          score: number
+          state: string
+          updated_at: string
+          user_id: string
+          website_type: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "businesses"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      is_owner: { Args: never; Returns: boolean }
+      take_batch: {
+        Args: { p_search: string }
+        Returns: {
+          city: string
+          created_at: string
+          data: Json
+          enrichment_dataset_id: string | null
+          enrichment_run_id: string | null
+          enrichment_status: string
+          id: string
+          is_lead: boolean
+          niche: string
+          place_id: string
+          score: number
+          state: string
+          updated_at: string
+          user_id: string
+          website_type: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "businesses"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
