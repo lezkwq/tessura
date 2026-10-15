@@ -15,6 +15,13 @@
       "when": 1792089718593,
       "tag": "0001_atomic_search_import",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792093170723,
+      "tag": "0002_grant_table_access",
+      "breakpoints": true
     }
   ]
 }
