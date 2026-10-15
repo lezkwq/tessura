@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { assertOwner, startRun, readRun, readDataset, cleanPlace, baseInput } from './apify.server';
 import { states, weightedScore, websiteType, type Business } from './prospeccao';
 export const keyStatus=createServerFn({method:'GET'}).handler(()=>({configured:Boolean(process.env['APIFY_API_KEY']&&process.env['LOVABLE_API_KEY'])}));
+export const latestSearch=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{ const {data,error}=await context.supabase.from('searches').select('*').order('updated_at',{ascending:false}).limit(1).maybeSingle(); if(error)throw new Error('Não foi possível carregar a última busca.');return data; });
 const searchSchema=z.object({city:z.string().trim().min(2).max(100),state:z.string().refine(s=>states.includes(s)),niche:z.string().trim().min(2).max(120)});
 const idSchema=z.object({id:z.string().uuid()});
 export const beginSearch=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>searchSchema.parse(input)).handler(async({data,context})=>{
@@ -40,9 +41,9 @@ export const pollSearch=createServerFn({method:'POST'}).middleware([requireSupab
  const rows=await readDataset(run.defaultDatasetId);
  // The row lock held by the import RPC makes polling and batch delivery idempotent.
  const candidates=rows.flatMap(row=>{
-  const kind=websiteType(row.website);
-  if(!kind||typeof row.placeId!=='string')return [];
-  return [{place_id:row.placeId,data:cleanPlace(row),website_type:kind,score:weightedScore(row.totalScore,row.reviewsCount)}];
+  const kind=websiteType(row['website']);
+  if(!kind||typeof row['placeId']!=='string')return [];
+  return [{place_id:row['placeId'],data:cleanPlace(row),website_type:kind,score:weightedScore(row['totalScore'],row['reviewsCount'])}];
  });
  const imported=await db.rpc('finish_search',{p_search:search.id,p_run:search.run_id,p_places:candidates});
  if(imported.error)throw new Error('Não foi possível guardar os resultados.');
@@ -77,7 +78,7 @@ export const pollLead=createServerFn({method:'POST'}).middleware([requireSupabas
  const run=await readRun(lead.enrichment_run_id);
  if(['FAILED','ABORTED','TIMED-OUT'].includes(run.status)){await db.from('businesses').update({enrichment_status:'failed'}).eq('id',lead.id);throw new Error('Não foi possível enriquecer o lead. Tente novamente.');}
  if(run.status!=='SUCCEEDED')return lead;
- const row=(await readDataset(run.defaultDatasetId)).find(r=>r.placeId===lead.place_id);
+ const row=(await readDataset(run.defaultDatasetId)).find(r=>r['placeId']===lead.place_id);
  if(!row){await db.from('businesses').update({enrichment_status:'failed'}).eq('id',lead.id);throw new Error('O Apify não devolveu os detalhes desta empresa.');}
  const saved=await db.from('businesses').update({data:cleanPlace(row),enrichment_status:'ready',updated_at:new Date().toISOString()}).eq('id',lead.id).select().single();
  if(!saved.data)throw new Error('Não foi possível salvar os detalhes.');return saved.data;
