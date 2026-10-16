@@ -3,6 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Gate } from "@/components/prospeccao/gate";
+import { ArrowUpRight, Trash, UserPlus, MapPin } from '@phosphor-icons/react';
+import { ActionIcon } from '@/components/prospeccao/action-icon';
+import { listLeads } from '@/lib/prospeccao.functions';
+import { listAudits } from '@/lib/abordagem.functions';
 import {
   addLead,
   beginSearch,
@@ -50,6 +54,8 @@ function SearchPage() {
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const keyQuery = useQuery({ queryKey: ["apify-key"], queryFn: () => keyStatus() });
+  const leads = useQuery({ queryKey: ['leads'], queryFn: () => listLeads() });
+  const audits = useQuery({ queryKey: ['audits'], queryFn: () => listAudits() });
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
   const [restoring, setRestoring] = useState(true);
@@ -140,8 +146,8 @@ function SearchPage() {
 
   return (
     <div className="app-container py-14">
-      <p className="eyebrow mb-3">EMPRESAS SEM SITE PRÓPRIO</p>
-      <h1 className="page-title mb-10">Nova busca</h1>
+      <h1 className="page-title">Olá, <strong>Leandro</strong> 👋</h1>
+      <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.data && audits.data ? `${leads.data.length} leads salvos · ${audits.data.filter(a => a.status === 'não enviada').length} auditorias não enviadas` : 'Carregando seus números...'}</p>
       <div className="mb-6 flex items-center justify-between gap-4">
         <span className="status-tag">{configured ? "Chave configurada" : "Chave pendente"}</span>
         {configured && (
@@ -306,11 +312,11 @@ function BusinessCard({
 
   return (
     <article
-      className={`business-card card-enter${leaving ? " card-leaving" : ""}`}
+      className={`card-green card-enter${leaving ? " card-leaving" : ""}`}
       style={{ animationDelay: `${(index % 10) * 40}ms` }}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="text-base font-medium">{text(data["title"])}</h2>
+        <h2 className="font-display text-2xl font-bold">{text(data["title"])}</h2>
         <span className="text-sm text-muted-foreground">{business.website_type}</span>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">{text(data["categoryName"])}</p>
@@ -330,12 +336,12 @@ function BusinessCard({
       </dl>
       <div className="mt-6 flex flex-wrap gap-3">
         <a
-          className={buttonVariants({ variant: "bordered", size: "sm" })}
+          className={buttonVariants({ variant: "bordered", className: 'h-auto py-1 pl-1 pr-4 whitespace-normal' })}
           href={mapsUrl(business)}
           target="_blank"
           rel="noreferrer"
         >
-          Abrir no Maps
+          <ActionIcon icon={MapPin}/>Abrir no Maps
         </a>
         {website && (
           <a
@@ -352,7 +358,8 @@ function BusinessCard({
             Adicionado
           </Button>
         ) : (
-          <Button variant="solid" size="sm" disabled={busy} onClick={onLead}>
+          <Button variant="solid" className="h-auto py-1 pl-1 pr-4 whitespace-normal" disabled={busy} onClick={onLead}>
+            <ActionIcon icon={UserPlus}/>
             {busy ? "Adicionando..." : "Adicionar aos leads"}
           </Button>
         )}
@@ -366,8 +373,8 @@ function BusinessCard({
             </Button>
           </>
         ) : (
-          <Button variant="quiet" size="sm" onClick={onAskDiscard}>
-            Descartar
+          <Button variant="quiet" className="h-auto py-1 pl-1 pr-4" onClick={onAskDiscard}>
+            <ActionIcon icon={Trash} className="bg-pastel-coral"/>Descartar
           </Button>
         )}
       </div>
