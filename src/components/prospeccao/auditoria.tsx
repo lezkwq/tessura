@@ -51,7 +51,7 @@ export function Auditoria({ business }: { business: Business }) {
 
   return (
     <section className="mt-10 border-t border-border pt-8">
-      <h2 className="text-xl font-medium">Auditoria</h2>
+      <h2 className="font-display text-3xl font-bold">Auditoria</h2>
       <div className="mt-5">
         <label className="data-label block" htmlFor="prints">Prints do Instagram (opcional)</label>
         <input id="prints" type="file" accept="image/png,image/jpeg,image/webp" multiple className="mt-1 block text-sm"
@@ -60,12 +60,12 @@ export function Auditoria({ business }: { business: Business }) {
         {busy === "print" && <p className="loading-text mt-2 text-sm text-muted-foreground">Lendo prints...</p>}
       </div>
       <div className="mt-6">
-        <p className="data-label">Observações (só as marcadas entram na mensagem)</p>
+        <p className="data-label">Observações</p>
         <ul className="mt-2 space-y-2">
           {obs.map((o) => (
             <li key={o.id} className="flex items-start gap-3">
               <input type="checkbox" className="mt-2" checked={o.checked} aria-label="Usar observação" onChange={(e) => update(o.id, { checked: e.target.checked })} />
-              <input className="w-full border border-border px-3 py-1.5 text-sm" value={o.text} onChange={(e) => update(o.id, { text: e.target.value })} />
+              <textarea rows={2} aria-label="Observação" className="field min-w-0 flex-1 text-sm" value={o.text} onChange={(e) => update(o.id, { text: e.target.value })} />
               <span className="mt-2 text-xs text-muted-foreground">{o.source}</span>
             </li>
           ))}
@@ -75,7 +75,7 @@ export function Auditoria({ business }: { business: Business }) {
       {busy === "msg" && <p className="loading-text mt-2 text-sm text-muted-foreground">Gerando mensagem...</p>}
       {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
       {audit && (
-        <div className="mt-6 border border-border p-5">
+        <div className="mt-6 card-yellow">
           <p className="whitespace-pre-wrap">{audit.message}</p>
           <p className="mt-3 text-xs text-muted-foreground">{audit.word_count} palavras</p>
           <p className="data-label mt-4">Observações usadas</p>

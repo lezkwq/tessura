@@ -30,11 +30,12 @@ function RulesPage() {
     setBusy(false);
   }
   const f = form;
-  const field = "mt-1 w-full border border-border px-3 py-2 text-sm";
+  const field = "field mt-1 text-sm text-foreground";
 
   return (
     <div className="app-container py-14">
-      <h1 className="page-title mb-8">Regras</h1>
+      <h1 className="page-title">Suas <strong>regras</strong> de abordagem</h1>
+      <p className="mt-3 mb-8 text-sm text-muted-foreground">O tom e os limites das suas mensagens.</p>
       <label className="data-label block" htmlFor="ins">Instruções enviadas à IA</label>
       <textarea id="ins" className={`${field} min-h-[320px]`} value={f.instructions} onChange={(e) => setForm({ ...f, instructions: e.target.value })} />
       <div className="mt-6 grid gap-4 sm:grid-cols-4">
