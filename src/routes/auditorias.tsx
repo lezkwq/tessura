@@ -1,4 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowUpRight, WhatsappLogo, Check } from "@phosphor-icons/react";
+import { ActionIcon } from "@/components/prospeccao/action-icon";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,17 +18,35 @@ export const Route = createFileRoute("/auditorias")({
 type Row = Awaited<ReturnType<typeof listAudits>>[number];
 
 function AuditsPage() {
+  const [filter, setFilter] = useState("Todas");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [term, setTerm] = useState("");
   const audits = useQuery({ queryKey: ["audits"], queryFn: () => listAudits() });
   if (audits.isLoading) return <div className="app-container py-24"><p className="loading-text text-muted-foreground">Carregando auditorias...</p></div>;
   if (audits.isError) return <div className="app-container py-24"><p className="text-destructive">Não foi possível carregar as auditorias.</p><p className="mt-2 text-xs text-muted-foreground">{audits.error instanceof Error ? audits.error.message : ""}</p></div>;
   const rows = audits.data ?? [];
-  return (
-    <div className="app-container py-14">
-      <h1 className="page-title mb-10">Auditorias</h1>
-      {!rows.length && <p className="text-muted-foreground">Nenhuma auditoria ainda. Gere uma mensagem no detalhe de um lead.</p>}
-      <div className="space-y-4">{rows.map((a, i) => <AuditRow key={a.id} audit={a} index={i} />)}</div>
+  const visible = rows.filter(a => (filter === "Todas" || a.status === (filter === "Enviadas" ? "enviada" : "não enviada")) && text(placeData(a.businesses?.data ?? {})["title"]).toLocaleLowerCase('pt-BR').includes(term.toLocaleLowerCase('pt-BR')));
+  const active = visible.find(a => a.id === selected) ?? visible[0];
+  return <main className="app-container py-10">
+    <h1 className="page-title">Você tem <strong>{rows.length} auditorias</strong></h1>
+    <p className="mt-3 mb-8 text-sm text-muted-foreground">Mensagens prontas para o próximo contato.</p>
+    <div className="mb-8 flex flex-wrap items-center gap-4">
+      <input className="field max-w-xs" aria-label="Filtrar auditorias" placeholder="Nome da empresa" value={term} onChange={e => setTerm(e.target.value)}/>
+      <div className="flex max-w-full flex-wrap gap-1 rounded-full bg-card p-1" aria-label="Status de auditoria">{['Todas','Não enviadas','Enviadas'].map(f => <Button key={f} variant={f === filter ? 'solid' : 'quiet'} aria-pressed={f === filter} onClick={() => setFilter(f)}>{f}</Button>)}</div>
     </div>
-  );
+    {!rows.length && <p className="card-cream">Nenhuma auditoria ainda.</p>}
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.4fr)]">
+      <aside className="min-w-0 space-y-4">{visible.map(a => <Button key={a.id} variant="quiet" className={cn('card-yellow h-auto w-full flex-col items-stretch whitespace-normal text-left text-foreground border-2',active?.id === a.id ? 'border-primary' : 'border-transparent')} onClick={() => setSelected(a.id)}>
+        <span className="flex items-start justify-between gap-3"><span className="font-display text-xl font-bold">{text(placeData(a.businesses?.data ?? {})['title'])}</span><ActionIcon icon={ArrowUpRight}/></span>
+        <span className="mt-2 text-sm text-muted-foreground">{a.businesses?.city}/{a.businesses?.state}</span><AuditStatus status={a.status}/>
+      </Button>)}{rows.length > 0 && !visible.length && <p className="card-cream">Nenhuma auditoria neste filtro.</p>}</aside>
+      {active && <AuditRow key={active.id} audit={active} index={0}/>}
+    </div>
+  </main>;
+}
+
+function AuditStatus({ status }: { status: Row['status'] }) {
+  return <span className={cn('mt-3 inline-flex w-fit items-center gap-2 rounded-full bg-card px-3 py-1 text-xs',status === 'enviada' ? 'text-success' : 'text-muted-foreground')}><span className={cn('h-1.5 w-1.5 rounded-full',status === 'enviada' ? 'bg-success' : 'bg-muted-foreground')}/>{status}</span>;
 }
 
 function AuditRow({ audit, index }: { audit: Row; index: number }) {
@@ -40,20 +61,20 @@ function AuditRow({ audit, index }: { audit: Row; index: number }) {
     setBusy(false);
   }
   return (
-    <div className="business-card card-enter" style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}>
+    <div className="card-yellow card-enter min-w-0" style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         {audit.businesses ? <Link to="/leads/$id" params={{ id: audit.business_id }} className="text-lg font-medium">{text(d["title"])}</Link> : <span>não informado</span>}
         <span className="text-sm text-muted-foreground">{audit.businesses?.city}/{audit.businesses?.state} · {new Date(audit.created_at).toLocaleDateString("pt-BR")} · {audit.status === "enviada" && audit.sent_at ? `enviada em ${new Date(audit.sent_at).toLocaleString("pt-BR")}` : "não enviada"}</span>
       </div>
-      <p className="mt-4 whitespace-pre-wrap">{audit.message}</p>
+      <AuditStatus status={audit.status}/><p className="mt-4 whitespace-pre-wrap break-words">{audit.message}</p>
       <p className="mt-2 text-xs text-muted-foreground">{audit.word_count} palavras</p>
       <p className="data-label mt-4">Observações usadas</p>
       <ul className="text-sm">{audit.observations.map((o) => <li key={o}>{o}</li>)}</ul>
       <div className="mt-5 flex flex-wrap gap-3">
         {phone.number
-          ? <a className={buttonVariants({ variant: "solid" })} href={whatsappLink(phone.number, audit.message)} target="_blank" rel="noreferrer">Abrir WhatsApp com a mensagem</a>
+          ? <a className={buttonVariants({ variant: "solid", className: "h-auto py-1 pl-1 pr-4 whitespace-normal" })} href={whatsappLink(phone.number, audit.message)} target="_blank" rel="noreferrer"><ActionIcon icon={WhatsappLogo}/>Abrir WhatsApp com a mensagem</a>
           : <Button variant="solid" disabled>Abrir WhatsApp com a mensagem</Button>}
-        <Button variant="bordered" size="sm" disabled={busy || audit.status === "enviada"} onClick={() => void act(() => markSent({ data: { id: audit.id } }))}>Marcar como enviada</Button>
+        <Button variant="bordered" className="h-auto py-1 pl-1 pr-4 whitespace-normal" disabled={busy || audit.status === "enviada"} onClick={() => void act(() => markSent({ data: { id: audit.id } }))}><ActionIcon icon={Check}/>Marcar como enviada</Button>
         <Button variant="quiet" size="sm" disabled={busy} onClick={() => void act(() => regenerateAudit({ data: { id: audit.id } }))}>Gerar de novo</Button>
       </div>
       {!phone.number && <p className="mt-2 text-sm text-muted-foreground">{phone.reason}</p>}
