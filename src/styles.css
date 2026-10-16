@@ -376,7 +376,10 @@
 }
 
 /* Fora de @layer de propósito: vence as classes rounded-* dos botões do shadcn */
-button:not([role="checkbox"]):not([role="switch"]):not([role="radio"]) {
+/* Botões comuns viram pílula. Ficam de fora: caixas de seleção, cartões que são botões e botões com raio próprio (rounded-[...]) */
+button:not([role="checkbox"]):not([role="switch"]):not([role="radio"]):not(.card-green):not(.card-blue):not(
+    .card-yellow
+  ):not(.card-coral):not(.card-cream):not([class*="rounded-["]) {
   border-radius: 9999px;
   transition:
     background-color 160ms ease-out,
@@ -384,8 +387,38 @@ button:not([role="checkbox"]):not([role="switch"]):not([role="radio"]) {
     border-color 160ms ease-out,
     transform 120ms ease-out;
 }
-button:not([role="checkbox"]):not([role="switch"]):not([role="radio"]):not(:disabled):active {
+button:not([role="checkbox"]):not([role="switch"]):not([role="radio"]):not(.card-green):not(.card-blue):not(
+    .card-yellow
+  ):not(.card-coral):not(.card-cream):not([class*="rounded-["]):not(:disabled):active {
   transform: scale(0.98);
+}
+/* Cartões que também são botões: mantêm o canto de cartão e o texto à esquerda */
+button.card-green,
+button.card-blue,
+button.card-yellow,
+button.card-coral,
+button.card-cream {
+  border-radius: 28px;
+  text-align: left;
+  transition:
+    transform 120ms ease-out,
+    background-color 160ms ease-out;
+}
+button.card-green:not(:disabled):active,
+button.card-blue:not(:disabled):active,
+button.card-yellow:not(:disabled):active,
+button.card-coral:not(:disabled):active,
+button.card-cream:not(:disabled):active {
+  transform: scale(0.99);
+}
+@media (max-width: 640px) {
+  button.card-green,
+  button.card-blue,
+  button.card-yellow,
+  button.card-coral,
+  button.card-cream {
+    border-radius: 24px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
