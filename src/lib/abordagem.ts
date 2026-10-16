@@ -1,5 +1,6 @@
 import type { Database } from '@/integrations/supabase/types';
 import { placeData, type Business } from './prospeccao';
+import { unsupportedNumbers } from './message-numbers';
 export type Rules = Database['public']['Tables']['message_rules']['Row'];
 export type Audit = Database['public']['Tables']['audits']['Row'];
 
@@ -61,9 +62,7 @@ export function validateMessage(message: string, rules: Rules, sources: string[]
   const nm = norm(m);
   const banned = rules.banned_words.filter((w) => w.trim() && nm.includes(norm(w.trim())));
   if (banned.length) errors.push(`usa palavras proibidas: ${banned.join(', ')}`);
-  const sourceNumbers = new Set((sources.join(' ').match(/\d+(?:[.,]\d+)?/g) ?? []).flatMap((n) => [n, n.replace(',', '.'), n.replace('.', ',')]));
-  const allowed = new Set(['2']); // "2 minutos" is part of the configured question
-  const invented = (m.match(/\d+(?:[.,]\d+)?/g) ?? []).filter((n) => !sourceNumbers.has(n) && !allowed.has(n));
+  const invented = unsupportedNumbers(m, sources);
   if (invented.length) errors.push(`cita números que não estão nos dados: ${invented.join(', ')}`);
   return errors;
 }

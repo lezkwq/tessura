@@ -17,3 +17,5 @@
 - Use one auth-state subscriber in the root provider and a private owner role assigned transactionally on first registration, because this tool permits exactly one account.
 - Restore the Busca screen from shown reserves in the database, with only the active search id kept in localStorage, because results must survive navigation and reloads.
 - Generate WhatsApp messages via Lovable AI in server functions and re-validate every output with pure code validators, because model output is untrusted.
+- Normalize numeric and Portuguese written cardinal claims in shared pure helpers and exempt only the specific digit occurrence in the duration phrase, because source-grounding must not depend on model compliance.
+- Reuse one lead-detail component inside the lead workspace for list and direct detail URLs, because desktop split views and mobile views must retain the same actions and queries.
