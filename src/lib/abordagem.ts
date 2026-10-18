@@ -1,6 +1,7 @@
 import type { Database } from '@/integrations/supabase/types';
 import { placeData, type Business } from './prospeccao';
 import { unsupportedNumbers } from './message-numbers';
+import { displayCity, displayName, formatRating } from './format';
 export type Rules = Database['public']['Tables']['message_rules']['Row'];
 export type Audit = Database['public']['Tables']['audits']['Row'];
 
@@ -16,10 +17,10 @@ function norm(s: string) {
 export function leadFacts(b: Business): string[] {
   const d = placeData(b.data);
   const facts: string[] = [];
-  if (typeof d['title'] === 'string') facts.push(`Empresa: ${d['title']}`);
+  if (typeof d['title'] === 'string') facts.push(`Empresa: ${displayName(d['title'])}`);
   if (typeof d['categoryName'] === 'string') facts.push(`Categoria: ${d['categoryName']}`);
-  facts.push(`Cidade: ${b.city}/${b.state}`);
-  if (typeof d['totalScore'] === 'number') facts.push(`Nota no Google: ${d['totalScore']}`);
+  facts.push(`Cidade: ${displayCity(b.city)}/${b.state}`);
+  if (typeof d['totalScore'] === 'number') facts.push(`Nota no Google: ${formatRating(d['totalScore'])}`);
   if (typeof d['reviewsCount'] === 'number') facts.push(`Avaliações no Google: ${d['reviewsCount']}`);
   facts.push(`Site no Maps: ${b.website_type}`);
   return facts;
@@ -31,7 +32,7 @@ export function mapsObservations(b: Business): string[] {
   const out: string[] = [];
   if (typeof d['totalScore'] === 'number') {
     const n = typeof d['reviewsCount'] === 'number' ? d['reviewsCount'] : null;
-    out.push(n !== null ? `A nota no Google é ${d['totalScore']} com ${n} avaliações` : `A nota no Google é ${d['totalScore']}`);
+    out.push(n !== null ? `A nota no Google é ${formatRating(d['totalScore'])} com ${n} avaliações` : `A nota no Google é ${formatRating(d['totalScore'])}`);
   }
   const site: Record<string, string> = {
     'sem site': 'O Maps não mostra nenhum site da empresa',
@@ -56,7 +57,7 @@ export function validateMessage(message: string, rules: Rules, sources: string[]
   if (words < rules.min_words || words > rules.max_words) errors.push(`tem ${words} palavras, fora do intervalo de ${rules.min_words} a ${rules.max_words}`);
   if (/\p{Extended_Pictographic}/u.test(m)) errors.push('contém emoji');
   if (/https?:\/\/|www\.|\b[\w-]+\.(com|br|net|org|me|ee|ai|cc|link)\b/i.test(m)) errors.push('contém link');
-  if (/R\$|\breais\b|\d+,\d{2}\b/i.test(m)) errors.push('contém preço');
+  if (/R\$|\breais\b/i.test(m)) errors.push('contém preço');
   if (/[—–]/.test(m)) errors.push('contém travessão');
   if (!norm(m).includes(norm(rules.signer))) errors.push(`não menciona ${rules.signer}`);
   const nm = norm(m);
