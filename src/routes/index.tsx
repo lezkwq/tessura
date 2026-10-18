@@ -1,3 +1,4 @@
+import { displayName, formatPhone, formatRating, linkLabel, plural, sortByScore } from '@/lib/format';
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -67,7 +68,7 @@ function SearchPage() {
   function show(result: { search: Search | null; batch: Business[] }) {
     if (!result.search) return;
     setSearch(result.search);
-    setBatch(result.batch);
+    setBatch(sortByScore(result.batch));
     setAdded(new Set(result.batch.filter((b) => b.is_lead).map((b) => b.id)));
     setForm({ city: result.search.city, state: result.search.state, niche: result.search.niche });
     remember(result.search.id);
@@ -147,7 +148,7 @@ function SearchPage() {
   return (
     <div className="app-container py-14">
       <h1 className="page-title">Olá, <strong>Leandro</strong> 👋</h1>
-      <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.data && audits.data ? `${leads.data.length} leads salvos · ${audits.data.filter(a => a.status === 'não enviada').length} auditorias não enviadas` : 'Carregando seus números...'}</p>
+      <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.data && audits.data ? (() => { const pend = audits.data.filter(a => a.status === 'não enviada').length; return `${plural(leads.data.length, 'lead salvo', 'leads salvos')} · ${plural(pend, 'auditoria não enviada', 'auditorias não enviadas')}`; })() : 'Carregando seus números...'}</p>
       <div className="mb-6 flex items-center justify-between gap-4">
         <span className="status-tag">{configured ? "Chave configurada" : "Chave pendente"}</span>
         {configured && (
@@ -306,7 +307,7 @@ function BusinessCard({
   onConfirmDiscard: () => void;
 }) {
   const data = placeData(business.data);
-  const rating = typeof data["totalScore"] === "number" ? data["totalScore"].toFixed(1) : null;
+  const rating = typeof data["totalScore"] === "number" ? formatRating(data["totalScore"]) : null;
   const count = typeof data["reviewsCount"] === "number" ? data["reviewsCount"] : null;
   const website = safeUrl(data["website"]);
 
@@ -316,7 +317,7 @@ function BusinessCard({
       style={{ animationDelay: `${(index % 10) * 40}ms` }}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="font-display text-2xl font-bold">{text(data["title"])}</h2>
+        <h2 className="font-display text-2xl font-bold">{displayName(text(data["title"]))}</h2>
         <span className="text-sm text-muted-foreground">{business.website_type}</span>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">{text(data["categoryName"])}</p>
@@ -327,7 +328,7 @@ function BusinessCard({
         </div>
         <div>
           <dt className="data-label">Telefone</dt>
-          <dd>{text(data["phoneUnformatted"] ?? data["phone"])}</dd>
+          <dd>{typeof (data["phone"] ?? data["phoneUnformatted"]) === "string" ? formatPhone(String(data["phone"] ?? data["phoneUnformatted"])) : "não informado"}</dd>
         </div>
         <div>
           <dt className="data-label">Avaliação</dt>
@@ -345,12 +346,12 @@ function BusinessCard({
         </a>
         {website && (
           <a
-            className={buttonVariants({ variant: "bordered", size: "sm" })}
+            className={buttonVariants({ variant: "bordered", className: "h-auto py-1 pl-1 pr-4 whitespace-normal" })}
             href={website}
             target="_blank"
             rel="noreferrer"
           >
-            Abrir site
+            <ActionIcon icon={ArrowUpRight}/>{linkLabel(business.website_type)}
           </a>
         )}
         {added ? (

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateMessage, whatsappLink, whatsappNumber, type Rules } from '@/lib/abordagem';
 
-const rules: Rules = { id: 'test', user_id: 'test', created_at: '', updated_at: '', instructions: '', opening: 'Oi', signer: 'Leandro', min_words: 1, max_words: 100, banned_words: ['garantido'] };
+const rules: Rules = { user_id: 'test', updated_at: '', instructions: '', opening: 'Oi', signer: 'Leandro', min_words: 1, max_words: 100, banned_words: ['garantido'] };
 const errors = (message: string, sources: string[] = []) => validateMessage(message, rules, sources);
 describe('Source-grounded outreach', () => {
   it('accepts 2 only in 2 minutos without a source', () => {

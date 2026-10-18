@@ -1,3 +1,4 @@
+import { displayCity, displayName, plural } from '@/lib/format';
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, WhatsappLogo, Check } from "@phosphor-icons/react";
 import { ActionIcon } from "@/components/prospeccao/action-icon";
@@ -28,7 +29,7 @@ function AuditsPage() {
   const visible = rows.filter(a => (filter === "Todas" || a.status === (filter === "Enviadas" ? "enviada" : "não enviada")) && text(placeData(a.businesses?.data ?? {})["title"]).toLocaleLowerCase('pt-BR').includes(term.toLocaleLowerCase('pt-BR')));
   const active = visible.find(a => a.id === selected) ?? visible[0];
   return <main className="app-container py-10">
-    <h1 className="page-title">Você tem <strong>{rows.length} auditorias</strong></h1>
+    <h1 className="page-title">Você tem <strong>{plural(rows.length,'auditoria','auditorias')}</strong></h1>
     <p className="mt-3 mb-8 text-sm text-muted-foreground">Mensagens prontas para o próximo contato.</p>
     <div className="mb-8 flex flex-wrap items-center gap-4">
       <input className="field max-w-xs" aria-label="Filtrar auditorias" placeholder="Nome da empresa" value={term} onChange={e => setTerm(e.target.value)}/>
@@ -37,8 +38,8 @@ function AuditsPage() {
     {!rows.length && <p className="card-cream">Nenhuma auditoria ainda.</p>}
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.4fr)]">
       <aside className="min-w-0 space-y-4">{visible.map(a => <Button key={a.id} variant="quiet" className={cn('card-yellow h-auto w-full flex-col items-stretch whitespace-normal text-left text-foreground border-2',active?.id === a.id ? 'border-primary' : 'border-transparent')} onClick={() => setSelected(a.id)}>
-        <span className="flex items-start justify-between gap-3"><span className="font-display text-xl font-bold">{text(placeData(a.businesses?.data ?? {})['title'])}</span><ActionIcon icon={ArrowUpRight}/></span>
-        <span className="mt-2 text-sm text-muted-foreground">{a.businesses?.city}/{a.businesses?.state}</span><AuditStatus status={a.status}/>
+        <span className="flex items-start justify-between gap-3"><span className="font-display text-xl font-bold">{displayName(text(placeData(a.businesses?.data ?? {})['title']))}</span><ActionIcon icon={ArrowUpRight}/></span>
+        <span className="mt-2 text-sm text-muted-foreground">{displayCity(a.businesses?.city ?? '')}/{a.businesses?.state}</span><AuditStatus status={a.status}/>
       </Button>)}{rows.length > 0 && !visible.length && <p className="card-cream">Nenhuma auditoria neste filtro.</p>}</aside>
       {active && <AuditRow key={active.id} audit={active} index={0}/>}
     </div>
@@ -63,8 +64,8 @@ function AuditRow({ audit, index }: { audit: Row; index: number }) {
   return (
     <div className="card-yellow card-enter min-w-0" style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        {audit.businesses ? <Link to="/leads/$id" params={{ id: audit.business_id }} className="text-lg font-medium">{text(d["title"])}</Link> : <span>não informado</span>}
-        <span className="text-sm text-muted-foreground">{audit.businesses?.city}/{audit.businesses?.state} · {new Date(audit.created_at).toLocaleDateString("pt-BR")} · {audit.status === "enviada" && audit.sent_at ? `enviada em ${new Date(audit.sent_at).toLocaleString("pt-BR")}` : "não enviada"}</span>
+        {audit.businesses ? <Link to="/leads/$id" params={{ id: audit.business_id }} className="text-lg font-medium">{displayName(text(d["title"]))}</Link> : <span>não informado</span>}
+        <span className="text-sm text-muted-foreground">{displayCity(audit.businesses?.city ?? "")}/{audit.businesses?.state} · {new Date(audit.created_at).toLocaleDateString("pt-BR")} · {audit.status === "enviada" && audit.sent_at ? `enviada em ${new Date(audit.sent_at).toLocaleString("pt-BR")}` : "não enviada"}</span>
       </div>
       <AuditStatus status={audit.status}/><p className="mt-4 whitespace-pre-wrap break-words">{audit.message}</p>
       <p className="mt-2 text-xs text-muted-foreground">{audit.word_count} palavras</p>

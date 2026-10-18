@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Gate } from "@/components/prospeccao/gate";
-import { discardBusiness, getLead, pollLead } from "@/lib/prospeccao.functions";
-import { MapPin, Trash } from '@phosphor-icons/react';
+import { addLead, discardBusiness, getLead, pollLead } from "@/lib/prospeccao.functions";
+import { displayCity, displayName, formatHours, formatPhone, formatRating, linkLabel } from "@/lib/format";
+import { ArrowUpRight, MapPin, Trash } from '@phosphor-icons/react';
 import { ActionIcon } from './action-icon';
 import { Auditoria } from "@/components/prospeccao/auditoria";
 import { mapsUrl, placeData, safeUrl, text } from "@/lib/prospeccao";
@@ -18,12 +19,12 @@ function items(value: unknown): string[] {
 function hourRows(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((entry) => {
-    if (typeof entry === "string") return entry.trim() ? [entry] : [];
+    if (typeof entry === "string") return entry.trim() ? [formatHours(entry)] : [];
     if (entry && typeof entry === "object") {
       const row = entry as Record<string, unknown>;
       const day = typeof row["day"] === "string" ? row["day"] : null;
       const hours = typeof row["hours"] === "string" ? row["hours"] : null;
-      if (day && hours) return [`${day}: ${hours}`];
+      if (day && hours) return [`${day}: ${formatHours(hours)}`];
     }
     return [];
   });
@@ -34,9 +35,9 @@ function reviewRows(value: unknown): { id: string; head: string; text: string }[
   return value.flatMap((entry) => {
     if (!entry || typeof entry !== "object") return [];
     const row = entry as Record<string, unknown>;
-    const name = typeof row["name"] === "string" ? row["name"] : "Avaliação";
-    const stars = typeof row["stars"] === "number" ? `${row["stars"]} estrelas` : null;
-    const when = typeof row["publishAt"] === "string" ? row["publishAt"] : null;
+    const name = typeof row["name"] === "string" ? row["name"] : "autor não informado";
+    const stars = typeof row["stars"] === "number" ? `nota ${String(row["stars"]).replace(".", ",")}` : "nota não informada";
+    const when = typeof row["publishedAtDate"] === "string" ? new Date(row["publishedAtDate"]).toLocaleDateString("pt-BR") : typeof row["publishAt"] === "string" ? row["publishAt"] : "data não informada";
     const head = [name, stars, when].filter(Boolean).join(" · ");
     const id = typeof row["reviewId"] === "string" ? row["reviewId"] : head;
     const text = typeof row["text"] === "string" ? row["text"] : "";
@@ -49,6 +50,7 @@ export function LeadDetail({ id }: { id: string }) {
   const navigate = useNavigate();
   const [status, setStatus] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [retryError, setRetryError] = useState("");
   const lead = useQuery({ queryKey: ["lead", id], queryFn: () => getLead({ data: { id } }) });
 
   useEffect(() => {
@@ -64,7 +66,10 @@ export function LeadDetail({ id }: { id: string }) {
           queryClient.setQueryData(["lead", id], fresh);
           if (fresh.enrichment_status !== "running") return;
         } catch (error) {
-          if (active) setStatus(error instanceof Error ? error.message : "Não foi possível atualizar.");
+          if (active) {
+            setRetryError(error instanceof Error ? error.message : String(error));
+            void queryClient.invalidateQueries({ queryKey: ["lead", id] });
+          }
           return;
         }
       }
@@ -73,6 +78,13 @@ export function LeadDetail({ id }: { id: string }) {
       active = false;
     };
   }, [id, lead.data?.enrichment_status, queryClient]);
+
+  const retry = useMutation({
+    mutationFn: () => addLead({ data: { id } }),
+    onMutate: () => { setRetryError(""); setStatus(""); },
+    onSuccess: (fresh) => queryClient.setQueryData(["lead", id], fresh),
+    onError: (error) => setRetryError(error instanceof Error ? error.message : String(error)),
+  });
 
   const remove = useMutation({
     mutationFn: (placeId: string) => discardBusiness({ data: { placeId } }),
@@ -115,7 +127,7 @@ export function LeadDetail({ id }: { id: string }) {
   const reviews = reviewRows(data["reviews"]).slice(0, 5);
   const photos = items(data["imageUrls"]).slice(0, 6);
   const website = safeUrl(data["website"]);
-  const rating = typeof data["totalScore"] === "number" ? data["totalScore"].toFixed(1) : null;
+  const rating = typeof data["totalScore"] === "number" ? formatRating(data["totalScore"]) : null;
   const count = typeof data["reviewsCount"] === "number" ? data["reviewsCount"] : null;
 
   return (
@@ -123,9 +135,9 @@ export function LeadDetail({ id }: { id: string }) {
       <Link className="text-sm text-muted-foreground hover:text-foreground" to="/leads">
         Voltar aos leads
       </Link>
-      <h2 className="font-display mt-6 text-3xl font-bold break-words">{text(data["title"])}</h2>
+      <h2 className="font-display mt-6 text-3xl font-bold break-words">{displayName(text(data["title"]))}</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        {text(data["categoryName"])} · {business.city}/{business.state}
+        {text(data["categoryName"])} · {displayCity(business.city)}/{business.state}
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <a
@@ -138,12 +150,12 @@ export function LeadDetail({ id }: { id: string }) {
         </a>
         {website && (
           <a
-            className={buttonVariants({ variant: "bordered", size: "sm" })}
+            className={buttonVariants({ variant: "bordered", className: "h-auto py-1 pl-1 pr-4" })}
             href={website}
             target="_blank"
             rel="noreferrer"
           >
-            Abrir site
+            <ActionIcon icon={ArrowUpRight}/>{linkLabel(business.website_type)}
           </a>
         )}
         <Button variant="danger" className="h-auto py-1 pl-1 pr-4" onClick={() => setConfirming(true)}>
@@ -181,9 +193,15 @@ export function LeadDetail({ id }: { id: string }) {
         </p>
       )}
       {business.enrichment_status === "failed" && (
-        <p className="mt-8 text-sm text-muted-foreground">
-          Os detalhes não foram carregados. Abra o lead novamente para tentar de novo.
-        </p>
+        <div className="mt-8 card-coral">
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm">Os detalhes não foram carregados.</p>
+            <Button variant="bordered" size="sm" disabled={retry.isPending} onClick={() => retry.mutate()}>
+              {retry.isPending ? "Tentando..." : "Tentar de novo"}
+            </Button>
+          </div>
+          {retryError && <p className="mt-2 text-xs text-muted-foreground">{retryError}</p>}
+        </div>
       )}
       <dl className="detail-grid mt-10 card-blue">
         <div>
@@ -192,7 +210,7 @@ export function LeadDetail({ id }: { id: string }) {
         </div>
         <div>
           <dt className="data-label">Telefone</dt>
-          <dd>{text(data["phoneUnformatted"] ?? data["phone"])}</dd>
+          <dd>{typeof (data["phone"] ?? data["phoneUnformatted"]) === "string" ? formatPhone(String(data["phone"] ?? data["phoneUnformatted"])) : "não informado"}</dd>
         </div>
         <div>
           <dt className="data-label">Site</dt>
@@ -215,6 +233,12 @@ export function LeadDetail({ id }: { id: string }) {
           <p className="mt-2">não informado</p>
         )}
       </div>
+      {reviews.length === 0 && (
+        <div className="mt-8 border-t border-border pt-8">
+          <p className="data-label">Avaliações recentes</p>
+          <p className="mt-2">não informado</p>
+        </div>
+      )}
       {reviews.length > 0 && (
         <div className="mt-8 border-t border-border pt-8">
           <p className="data-label">Avaliações recentes</p>
@@ -257,6 +281,18 @@ export function LeadDetail({ id }: { id: string }) {
               );
             })}
           </ul>
+        </div>
+      )}
+      {social.length === 0 && (
+        <div className="mt-8 border-t border-border pt-8">
+          <p className="data-label">Links sociais</p>
+          <p className="mt-2">não informado</p>
+        </div>
+      )}
+      {photos.length === 0 && (
+        <div className="mt-8 border-t border-border pt-8">
+          <p className="data-label">Fotos</p>
+          <p className="mt-2">não informado</p>
         </div>
       )}
       {photos.length > 0 && (
