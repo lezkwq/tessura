@@ -7,9 +7,10 @@ export async function assertOwner(db: AppClient) {
  if(error||!data) throw new Error('Acesso restrito ao proprietário.');
 }
 export async function apify<T>(path: string, input?: Record<string, unknown>): Promise<T> {
- const key=process.env['APIFY_API_KEY']; const projectKey=process.env['LOVABLE_API_KEY'];
- if(!key||!projectKey)throw new Error('Configure a chave do Apify nos conectores do projeto.');
- const response=await fetch(`https://connector-gateway.lovable.dev/apify${path}`,{method:input?'POST':'GET',headers:{Authorization:`Bearer ${projectKey}`,'X-Connection-Api-Key':key,'Content-Type':'application/json'},body:input?JSON.stringify(input):null,signal:AbortSignal.timeout(25000)});
+ // Direct Apify API with the owner's own token, stored only as a backend secret.
+ const token=process.env['APIFY_TOKEN'];
+ if(!token)throw new Error('Configure a chave do Apify.');
+ const response=await fetch(`https://api.apify.com/v2${path}`,{method:input?'POST':'GET',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:input?JSON.stringify(input):null,signal:AbortSignal.timeout(25000)});
  if(!response.ok) {
   // Do not return or log provider bodies: upstream errors can contain credentials.
   throw new Error(`O Apify retornou um erro (${response.status}). Verifique a conexão e o saldo da sua conta.`);
