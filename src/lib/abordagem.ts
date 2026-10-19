@@ -2,6 +2,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { placeData, type Business } from './prospeccao';
 import { unsupportedNumbers } from './message-numbers';
 import { displayCity, displayName, formatRating } from './format';
+import { photoCount } from './audit-data';
 export type Rules = Database['public']['Tables']['message_rules']['Row'];
 export type Audit = Database['public']['Tables']['audits']['Row'];
 
@@ -23,6 +24,7 @@ export function leadFacts(b: Business): string[] {
   if (typeof d['totalScore'] === 'number') facts.push(`Nota no Google: ${formatRating(d['totalScore'])}`);
   if (typeof d['reviewsCount'] === 'number') facts.push(`Avaliações no Google: ${d['reviewsCount']}`);
   facts.push(`Site no Maps: ${b.website_type}`);
+  const count = photoCount(d); if (count !== null) facts.push(`Fotos no Google Maps: ${count}`);
   return facts;
 }
 
@@ -46,6 +48,7 @@ export function mapsObservations(b: Business): string[] {
   else out.push('O Maps não mostra horários de funcionamento');
   const photos = Array.isArray(d['imageUrls']) ? d['imageUrls'].length : 0;
   if (photos) out.push('O perfil no Maps tem fotos publicadas');
+  const count = photoCount(d); if (count !== null) out.push(`O Maps informa ${count} fotos`);
   return out;
 }
 
