@@ -29,6 +29,13 @@
       "when": 1792095402689,
       "tag": "0003_whatsapp_audits",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792374472883,
+      "tag": "0004_audit_complement_and_observation_state",
+      "breakpoints": true
     }
   ]
 }
