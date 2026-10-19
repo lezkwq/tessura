@@ -47,7 +47,6 @@ function SearchPage() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState("");
-  const [keyHint, setKeyHint] = useState(false);
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
   const alive = useRef(true);
@@ -149,25 +148,7 @@ function SearchPage() {
     <div className="app-container py-14">
       <h1 className="page-title">Olá, <strong>Leandro</strong> 👋</h1>
       <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.data && audits.data ? (() => { const pend = audits.data.filter(a => a.status === 'não enviada').length; return `${plural(leads.data.length, 'lead salvo', 'leads salvos')} · ${plural(pend, 'auditoria não enviada', 'auditorias não enviadas')}`; })() : 'Carregando seus números...'}</p>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <span className="status-tag">{configured ? "Chave configurada" : "Chave pendente"}</span>
-        {configured && (
-          <Button variant="quiet" size="sm" onClick={() => setKeyHint(!keyHint)}>
-            Trocar chave
-          </Button>
-        )}
-      </div>
-      {keyHint ? (
-        <p className="mb-8 text-sm text-muted-foreground">
-          A chave do Apify é trocada nas configurações de conectores do projeto.
-        </p>
-      ) : (
-        !configured && (
-          <p className="mb-8 text-sm text-muted-foreground">
-            Adicione sua chave do Apify nos conectores do projeto para começar a buscar.
-          </p>
-        )
-      )}
+      {keyQuery.data?.configured === false && <p role="alert" className="mb-6 text-sm text-destructive">A chave do Apify está ausente.</p>}
       <form
         className="search-panel mb-10"
         onSubmit={(e) => {

@@ -31,7 +31,7 @@ export async function readDataset(id:string) {
  return result;
 }
 export function cleanPlace(row: Record<string,Json>): Json {
- const allowed=['placeId','title','categoryName','categories','address','street','city','state','postalCode','countryCode','phone','phoneUnformatted','totalScore','reviewsCount','website','url','openingHours','reviews','imageUrls','imageUrl','images','facebooks','instagrams','twitters','youtubes','tiktoks','linkedIns','emails','socialMedia','additionalInfo'];
+ const allowed=['placeId','title','categoryName','categories','address','street','city','state','postalCode','countryCode','phone','phoneUnformatted','totalScore','reviewsCount','website','url','openingHours','reviews','imageUrls','imageUrl','images','imagesCount','facebooks','instagrams','twitters','youtubes','tiktoks','linkedIns','emails','socialMedia','additionalInfo'];
  return Object.fromEntries(allowed.filter(k=>row[k]!==undefined).map(k=>[k,row[k]]));
 }
 export const baseInput={language:'pt-BR',skipClosedPlaces:true,scrapeSocialMediaProfiles:{facebooks:false,instagrams:false,youtubes:false,tiktoks:false,twitters:false}};

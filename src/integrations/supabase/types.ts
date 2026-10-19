@@ -17,9 +17,11 @@ export type Database = {
       audits: {
         Row: {
           business_id: string
+          complement: string
           created_at: string
           id: string
           message: string
+          observation_state: Json
           observations: string[]
           sent_at: string | null
           status: string
@@ -29,9 +31,11 @@ export type Database = {
         }
         Insert: {
           business_id: string
+          complement?: string
           created_at?: string
           id?: string
           message: string
+          observation_state?: Json
           observations?: string[]
           sent_at?: string | null
           status?: string
@@ -41,9 +45,11 @@ export type Database = {
         }
         Update: {
           business_id?: string
+          complement?: string
           created_at?: string
           id?: string
           message?: string
+          observation_state?: Json
           observations?: string[]
           sent_at?: string | null
           status?: string
@@ -75,6 +81,7 @@ export type Database = {
       }
       businesses: {
         Row: {
+          audit_notes: Json
           city: string
           created_at: string
           data: Json
@@ -92,6 +99,7 @@ export type Database = {
           website_type: string
         }
         Insert: {
+          audit_notes?: Json
           city: string
           created_at?: string
           data?: Json
@@ -109,6 +117,7 @@ export type Database = {
           website_type: string
         }
         Update: {
+          audit_notes?: Json
           city?: string
           created_at?: string
           data?: Json
@@ -280,6 +289,7 @@ export type Database = {
       finish_search: {
         Args: { p_places: Json; p_run: string; p_search: string }
         Returns: {
+          audit_notes: Json
           city: string
           created_at: string
           data: Json
@@ -307,6 +317,7 @@ export type Database = {
       take_batch: {
         Args: { p_search: string }
         Returns: {
+          audit_notes: Json
           city: string
           created_at: string
           data: Json

@@ -3,7 +3,11 @@
 - [x] Documented Apify searches, filtered reserve, ten-item batches and discard.
 - [x] Lead enrichment, list and detail.
 - [x] Validate flows, privacy and page metadata.
-- [ ] Stage 1: Verify saved leads, restored search, image reading, generation and WhatsApp; fix number validators.
-- [ ] Stage 2: Complete requested visual changes without database or business-logic changes.
-- [ ] Stage 3: Verify all five views on desktop and mobile.
-- [ ] Stage 4: Report passed, corrected and unverified checks.
+- [ ] Etapa 0: Test previous retry, generation, desktop and mobile; correct failures.
+- [ ] Etapa 1: Hide successful key notice.
+- [ ] Etapa 2: Validate print picker, thumbnails and real reading.
+- [ ] Etapa 3: Persist complement and full observation state; validate as data; photo count.
+- [ ] Etapa 4: Report duplicate audits before cleanup, enforce one audit per lead, confirm sent replacement.
+- [ ] Etapa 5: Generated-message WhatsApp button and exact address check.
+- [ ] Etapa 6: Markdown exports from saved data and missing contacts.
+- [ ] Etapa 7: Guarded tab-session-only search retention.
