@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { generateMessage, readPrints } from "@/lib/abordagem.functions";
 import { mapsObservations, type Audit } from "@/lib/abordagem";
 import type { Business } from "@/lib/prospeccao";
+import { PrintPicker } from './print-picker';
 
 interface Obs { id: number; text: string; checked: boolean; source: "Print" | "Maps" }
 let seq = 0;
@@ -52,11 +53,10 @@ export function Auditoria({ business }: { business: Business }) {
   return (
     <section className="mt-10 border-t border-border pt-8">
       <h2 className="font-display text-3xl font-bold">Auditoria</h2>
-      <div className="mt-5">
-        <label className="data-label block" htmlFor="prints">Prints do Instagram (opcional)</label>
-        <input id="prints" type="file" accept="image/png,image/jpeg,image/webp" multiple className="mt-1 block text-sm"
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))} />
-        <Button className="mt-3" variant="bordered" size="sm" disabled={!files.length || busy !== ""} onClick={() => void read()}>Ler print</Button>
+      <PrintPicker files={files} onChange={setFiles} busy={busy !== ''} />
+      <div>
+        <Button className="mt-3" variant="solid" size="sm" title={!files.length ? 'Escolha um print primeiro' : undefined} disabled={!files.length || busy !== ""} onClick={() => void read()}>Ler print</Button>
+        {!files.length && <p className="mt-2 text-xs text-muted-foreground">Escolha um print primeiro</p>}
         {busy === "print" && <p className="loading-text mt-2 text-sm text-muted-foreground">Lendo prints...</p>}
       </div>
       <div className="mt-6">
