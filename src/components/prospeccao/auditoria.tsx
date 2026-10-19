@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { generateMessage, readPrints } from "@/lib/abordagem.functions";
+import { generateMessage, readPrints, getAuditWorkspace, saveAuditNotes } from "@/lib/abordagem.functions";
 import { mapsObservations, type Audit } from "@/lib/abordagem";
 import type { Business } from "@/lib/prospeccao";
+import { useServerFn } from '@tanstack/react-start';
+import { useQueryClient } from '@tanstack/react-query';
+import { parseNotes, photoCount, type Observation } from '@/lib/audit-data';
 import { PrintPicker } from './print-picker';
 
-interface Obs { id: number; text: string; checked: boolean; source: "Print" | "Maps" }
-let seq = 0;
+type Obs = Observation;
 
 function toDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -20,10 +22,26 @@ function toDataUrl(file: File) {
 
 export function Auditoria({ business }: { business: Business }) {
   const [files, setFiles] = useState<File[]>([]);
-  const [obs, setObs] = useState<Obs[]>(() => mapsObservations(business).map((text) => ({ id: seq++, text, checked: false, source: "Maps" })));
+  const [obs, setObs] = useState<Obs[]>(() => mapsObservations(business).map((text, i) => ({ id: `maps-${i}`, text, checked: false, source: "Maps" })));
   const [busy, setBusy] = useState<"" | "print" | "msg">("");
   const [error, setError] = useState("");
   const [audit, setAudit] = useState<Audit | null>(null);
+
+  const [complement, setComplement] = useState('');
+  const [ready, setReady] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const qc = useQueryClient();
+  const loadFn = useServerFn(getAuditWorkspace);
+  const saveFn = useServerFn(saveAuditNotes);
+  const generateFn = useServerFn(generateMessage);
+  const readFn = useServerFn(readPrints);
+  useEffect(() => { let active = true; void loadFn({ data: { id: business.id } }).then(result => {
+    if (!active) return;
+    const notes = result.notes.observations.length || result.notes.complement ? result.notes : parseNotes({ complement: result.audit?.complement ?? '', observations: result.audit?.observation_state });
+    if (notes.observations.length) setObs(notes.observations);
+    setComplement(notes.complement); setAudit(result.audit); setReady(true);
+  }).catch(e => { if (active) setError(e instanceof Error ? e.message : 'Não foi possível carregar a auditoria.'); }); return () => { active = false; }; }, [business.id, loadFn]);
+  useEffect(() => { if (!ready) return; const timer = setTimeout(() => { void saveFn({ data: { id: business.id, notes: { complement, observations: obs } } }).catch(e => setError(e instanceof Error ? e.message : 'Não foi possível salvar.')); }, 500); return () => clearTimeout(timer); }, [business.id, complement, obs, ready, saveFn]);
 
   async function read() {
     setBusy("print"); setError("");
@@ -31,23 +49,26 @@ export function Auditoria({ business }: { business: Business }) {
       const big = files.find((f) => f.size > 5_000_000);
       if (big) throw new Error(`O arquivo ${big.name} passa de 5 MB.`);
       const images = await Promise.all(files.map(toDataUrl));
-      const lines = await readPrints({ data: { images } });
+      const lines = await readFn({ data: { images } });
       if (!lines.length) setError("Não foi possível ler nada com segurança nesses prints.");
-      setObs((o) => [...o.filter((x) => x.source !== "Print"), ...lines.map((text) => ({ id: seq++, text, checked: false, source: "Print" as const }))]);
+      setObs((o) => [...o.filter((x) => x.source !== "Print"), ...lines.map((text, i) => ({ id: `print-${Date.now()}-${i}`, text, checked: false, source: "Print" as const }))]);
     } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível ler o print."); }
     setBusy("");
   }
 
-  async function generate() {
-    setBusy("msg"); setError(""); setAudit(null);
+  async function generate(confirmed = false) {
+    if (audit?.status === 'enviada' && !confirmed) { setConfirming(true); return; }
+    setConfirming(false); setBusy("msg"); setError("");
     try {
       const chosen = obs.filter((o) => o.checked && o.text.trim()).map((o) => o.text.trim());
-      setAudit(await generateMessage({ data: { id: business.id, observations: chosen } }));
+      await saveFn({ data: { id: business.id, notes: { complement, observations: obs } } });
+      setAudit(await generateFn({ data: { id: business.id, observations: chosen, complement, observation_state: obs, confirmed } }));
+      await qc.invalidateQueries({ queryKey: ['audits'] });
     } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível gerar a mensagem."); }
     setBusy("");
   }
 
-  const update = (id: number, patch: Partial<Obs>) => setObs((o) => o.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const update = (id: string, patch: Partial<Obs>) => setObs((o) => o.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   const anyChecked = obs.some((o) => o.checked && o.text.trim());
 
   return (
@@ -71,7 +92,15 @@ export function Auditoria({ business }: { business: Business }) {
           ))}
         </ul>
       </div>
-      <Button className="mt-6" variant="solid" size="sm" disabled={!anyChecked || busy !== ""} onClick={() => void generate()}>Gerar mensagem</Button>
+      <div className="mt-6">
+        <label className="data-label block" htmlFor="complement">Complemento</label>
+        <textarea id="complement" className="field mt-2" rows={3} maxLength={300} value={complement} disabled={!ready || busy !== ''} onChange={e => setComplement(e.target.value)} />
+        <p className="mt-2 text-xs text-muted-foreground">Algo que você viu e a busca não captura. Ex.: Maps sem fotos, Instagram parado há meses.</p>
+        <p className="mt-1 text-right text-xs text-muted-foreground">{complement.length}/300</p>
+        {photoCount(business.data && typeof business.data === 'object' && !Array.isArray(business.data) ? business.data : {}) !== null && <p className="mt-2 text-sm">Fotos no Maps: {photoCount(business.data && typeof business.data === 'object' && !Array.isArray(business.data) ? business.data : {})}</p>}
+      </div>
+      <Button className="mt-6" variant="solid" size="sm" disabled={!ready || (!anyChecked && !complement.trim()) || busy !== ""} onClick={() => void generate()}>Gerar mensagem</Button>
+      {confirming && <div className="mt-4 card-coral" role="alertdialog" aria-label="Substituir mensagem enviada"><p>Esta mensagem já foi marcada como enviada. Gerar uma nova substitui a mensagem e o registro. Continuar?</p><div className="mt-3 flex gap-3"><Button variant="solid" onClick={() => void generate(true)}>Continuar</Button><Button variant="bordered" onClick={() => setConfirming(false)}>Cancelar</Button></div></div>}
       {busy === "msg" && <p className="loading-text mt-2 text-sm text-muted-foreground">Gerando mensagem...</p>}
       {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
       {audit && (
