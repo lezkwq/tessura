@@ -1,14 +1,15 @@
 import { displayCity, displayName, plural } from '@/lib/format';
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, WhatsappLogo, Check } from "@phosphor-icons/react";
+import { ArrowUpRight, Check } from "@phosphor-icons/react";
 import { ActionIcon } from "@/components/prospeccao/action-icon";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Gate } from "@/components/prospeccao/gate";
 import { listAudits, markSent, regenerateAudit } from "@/lib/abordagem.functions";
-import { whatsappLink, whatsappNumber } from "@/lib/abordagem";
+import { MessageWhatsapp } from '@/components/prospeccao/message-whatsapp';
+import { parseNotes } from '@/lib/audit-data';
 import { metadata, placeData, text } from "@/lib/prospeccao";
 
 export const Route = createFileRoute("/auditorias")({
@@ -54,8 +55,9 @@ function AuditRow({ audit, index }: { audit: Row; index: number }) {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState(false);
   const d = placeData(audit.businesses?.data ?? {});
-  const phone = whatsappNumber(d["phoneUnformatted"] ?? d["phone"]);
+  const notes = parseNotes({ complement: audit.complement, observations: audit.observation_state });
   async function act(fn: () => Promise<unknown>) {
     setBusy(true); setError("");
     try { await fn(); await qc.invalidateQueries({ queryKey: ["audits"] }); } catch (e) { setError(e instanceof Error ? e.message : "Erro."); }
@@ -71,14 +73,14 @@ function AuditRow({ audit, index }: { audit: Row; index: number }) {
       <p className="mt-2 text-xs text-muted-foreground">{audit.word_count} palavras</p>
       <p className="data-label mt-4">Observações usadas</p>
       <ul className="text-sm">{audit.observations.map((o) => <li key={o}>{o}</li>)}</ul>
+      {audit.complement && <div className="mt-4"><p className="data-label">Complemento</p><p className="mt-2 whitespace-pre-wrap break-words text-sm">{audit.complement}</p></div>}
+      {notes.observations.some(o => o.kind === 'Visual') && <div className="mt-4"><p className="data-label">Linguagem visual (do print)</p><ul className="mt-2 text-sm">{notes.observations.filter(o => o.kind === 'Visual').map(o => <li key={o.id}>{o.text} · {o.checked ? 'marcada' : 'não marcada'}</li>)}</ul></div>}
       <div className="mt-5 flex flex-wrap gap-3">
-        {phone.number
-          ? <a className={buttonVariants({ variant: "solid", className: "h-auto py-1 pl-1 pr-4 whitespace-normal" })} href={whatsappLink(phone.number, audit.message)} target="_blank" rel="noreferrer"><ActionIcon icon={WhatsappLogo}/>Abrir WhatsApp com a mensagem</a>
-          : <Button variant="solid" disabled>Abrir WhatsApp com a mensagem</Button>}
+        <MessageWhatsapp data={audit.businesses?.data ?? {}} message={audit.message}/>
         <Button variant="bordered" className="h-auto py-1 pl-1 pr-4 whitespace-normal" disabled={busy || audit.status === "enviada"} onClick={() => void act(() => markSent({ data: { id: audit.id } }))}><ActionIcon icon={Check}/>Marcar como enviada</Button>
-        <Button variant="quiet" size="sm" disabled={busy} onClick={() => void act(() => regenerateAudit({ data: { id: audit.id } }))}>Gerar de novo</Button>
+        <Button variant="quiet" size="sm" disabled={busy} onClick={() => { if (audit.status === 'enviada') setConfirming(true); else void act(() => regenerateAudit({ data: { id: audit.id } })); }}>Gerar de novo</Button>
       </div>
-      {!phone.number && <p className="mt-2 text-sm text-muted-foreground">{phone.reason}</p>}
+      {confirming && <div className="mt-4" role="alertdialog" aria-label="Substituir mensagem enviada"><p>Esta mensagem já foi marcada como enviada. Gerar uma nova substitui a mensagem e o registro. Continuar?</p><div className="mt-3 flex gap-3"><Button variant="solid" disabled={busy} onClick={() => { setConfirming(false); void act(() => regenerateAudit({ data: { id: audit.id, confirmed: true } })); }}>Continuar</Button><Button variant="bordered" onClick={() => setConfirming(false)}>Cancelar</Button></div></div>}
       {busy && <p className="loading-text mt-2 text-sm text-muted-foreground">Aguarde...</p>}
       {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
     </div>

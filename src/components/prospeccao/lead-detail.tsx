@@ -8,6 +8,7 @@ import { displayCity, displayName, formatHours, formatPhone, formatRating, linkL
 import { ArrowUpRight, MapPin, Trash } from '@phosphor-icons/react';
 import { ActionIcon } from './action-icon';
 import { Auditoria } from "@/components/prospeccao/auditoria";
+import { LeadDownload } from './lead-download';
 import { mapsUrl, placeData, safeUrl, text } from "@/lib/prospeccao";
 
 function items(value: unknown): string[] {
@@ -161,6 +162,7 @@ export function LeadDetail({ id }: { id: string }) {
         <Button variant="danger" className="h-auto py-1 pl-1 pr-4" onClick={() => setConfirming(true)}>
           <ActionIcon icon={Trash}/>Descartar
         </Button>
+        <LeadDownload business={business}/>
       </div>
       {confirming && (
         <div className="mt-6 card-coral">

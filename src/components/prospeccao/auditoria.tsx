@@ -42,7 +42,7 @@ export function Auditoria({ business }: { business: Business }) {
     if (notes.observations.length) setObs(notes.observations);
     setComplement(notes.complement); setAudit(result.audit); setReady(true);
   }).catch(e => { if (active) setError(e instanceof Error ? e.message : 'Não foi possível carregar a auditoria.'); }); return () => { active = false; }; }, [business.id, loadFn]);
-  useEffect(() => { if (!ready) return; const timer = setTimeout(() => { void saveFn({ data: { id: business.id, notes: { complement, observations: obs } } }).catch(e => setError(e instanceof Error ? e.message : 'Não foi possível salvar.')); }, 500); return () => clearTimeout(timer); }, [business.id, complement, obs, ready, saveFn]);
+  useEffect(() => { if (!ready) return; const timer = setTimeout(() => { void saveFn({ data: { id: business.id, notes: { complement, observations: obs } } }).then(() => qc.invalidateQueries({ queryKey: ['audit-workspace-export', business.id] })).catch(e => setError(e instanceof Error ? e.message : 'Não foi possível salvar.')); }, 500); return () => clearTimeout(timer); }, [business.id, complement, obs, ready, saveFn, qc]);
 
   async function read() {
     setBusy("print"); setError("");
@@ -65,6 +65,7 @@ export function Auditoria({ business }: { business: Business }) {
       await saveFn({ data: { id: business.id, notes: { complement, observations: obs } } });
       setAudit(await generateFn({ data: { id: business.id, observations: chosen, complement, observation_state: obs, confirmed } }));
       await qc.invalidateQueries({ queryKey: ['audits'] });
+      await qc.invalidateQueries({ queryKey: ['audit-workspace-export', business.id] });
     } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível gerar a mensagem."); }
     setBusy("");
   }
