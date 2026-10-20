@@ -3,7 +3,7 @@ import { streamText, type ModelMessage } from 'ai';
 
 const MODEL = 'google/gemini-3.8-flash';
 
-export async function askGemini(messages: ModelMessage[]): Promise<string> {
+export async function askGemini(messages: ModelMessage[], instructions?: string): Promise<string> {
   const key = process.env['LOVABLE_API_KEY'];
   if (!key) throw new Error('A chave do Lovable AI não está configurada.');
   let runId: string | undefined;
@@ -28,7 +28,7 @@ export async function askGemini(messages: ModelMessage[]): Promise<string> {
     },
   });
   let failure: unknown;
-  const result = streamText({ model: provider(MODEL), messages, maxRetries: 0, onError: ({ error }) => { failure = error; } });
+  const result = streamText({ model: provider(MODEL), messages, instructions, maxRetries: 0, onError: ({ error }) => { failure = error; } });
   let text: string;
   try { text = await result.text; } catch (e) { throw failure ?? e; }
   if (failure) throw failure;

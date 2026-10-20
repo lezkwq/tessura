@@ -67,7 +67,7 @@ async function compose(db: AppClient, userId: string, businessId: string, observ
   const attempts = complement.trim() ? 2 : 3;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const prompt = lastErrors.length ? `${base}\n\nA tentativa anterior foi recusada porque ${lastErrors.join('; ')}. Corrija.` : base;
-    const message = (await askGemini([{ role: 'system', content: prompt }, { role: 'user', content: JSON.stringify({ dados: facts, observacoesConfirmadas: observations, complementoConfirmado: complement }) }])).replace(/^["']|["']$/g, '').trim();
+    const message = (await askGemini([{ role: 'user', content: JSON.stringify({ dados: facts, observacoesConfirmadas: observations, complementoConfirmado: complement }) }], prompt)).replace(/^["']|["']$/g, '').trim();
     lastErrors = validateMessage(message, rules, sources);
     if (complement.trim().length >= 12 && message.toLocaleLowerCase('pt-BR').includes(complement.trim().toLocaleLowerCase('pt-BR'))) lastErrors.push('copiou o complemento literalmente');
     if (!lastErrors.length) return { message, words: wordCount(message) };
