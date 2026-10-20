@@ -1,9 +1,9 @@
 import { WhatsappLogo } from '@phosphor-icons/react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { whatsappLink, whatsappNumber } from '@/lib/abordagem';
-import { placeData } from '@/lib/prospeccao';
+import { placeData, type Business } from '@/lib/prospeccao';
 import { ActionIcon } from './action-icon';
-export function MessageWhatsapp({ data, message }: { data: unknown; message: string }) {
+export function MessageWhatsapp({ data, message }: { data: Business['data']; message: string }) {
   const d = placeData(data);
   const phone = whatsappNumber(d['phoneUnformatted'] ?? d['phone']);
   return phone.number

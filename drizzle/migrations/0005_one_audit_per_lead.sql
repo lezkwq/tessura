@@ -1,0 +1,1 @@
+ALTER TABLE public.audits ADD CONSTRAINT audits_business_id_unique UNIQUE (business_id);
