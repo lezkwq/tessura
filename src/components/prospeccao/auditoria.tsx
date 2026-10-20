@@ -8,6 +8,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { useQueryClient } from '@tanstack/react-query';
 import { parseNotes, photoCount, type Observation } from '@/lib/audit-data';
 import { PrintPicker } from './print-picker';
+import { MessageWhatsapp } from './message-whatsapp';
 
 type Obs = Observation;
 
@@ -51,7 +52,7 @@ export function Auditoria({ business }: { business: Business }) {
       const images = await Promise.all(files.map(toDataUrl));
       const lines = await readFn({ data: { images } });
       if (!lines.length) setError("Não foi possível ler nada com segurança nesses prints.");
-      setObs((o) => [...o.filter((x) => x.source !== "Print"), ...lines.map((text, i) => ({ id: `print-${Date.now()}-${i}`, text, checked: false, source: "Print" as const }))]);
+      setObs((o) => [...o.filter((x) => x.source !== "Print"), ...lines.map((item, i) => ({ id: `print-${Date.now()}-${i}`, ...item, checked: false, source: "Print" as const }))]);
     } catch (e) { setError(e instanceof Error ? e.message : "Não foi possível ler o print."); }
     setBusy("");
   }
@@ -87,7 +88,7 @@ export function Auditoria({ business }: { business: Business }) {
             <li key={o.id} className="flex items-start gap-3">
               <input type="checkbox" className="mt-2" checked={o.checked} aria-label="Usar observação" onChange={(e) => update(o.id, { checked: e.target.checked })} />
               <textarea rows={2} aria-label="Observação" className="field min-w-0 flex-1 text-sm" value={o.text} onChange={(e) => update(o.id, { text: e.target.value })} />
-              <span className="mt-2 text-xs text-muted-foreground">{o.source}</span>
+              <span className="mt-2 text-xs text-muted-foreground">{o.source}{o.kind === 'Visual' ? ' · Visual' : ''}</span>
             </li>
           ))}
         </ul>
@@ -109,7 +110,7 @@ export function Auditoria({ business }: { business: Business }) {
           <p className="mt-3 text-xs text-muted-foreground">{audit.word_count} palavras</p>
           <p className="data-label mt-4">Observações usadas</p>
           <ul className="text-sm">{audit.observations.map((o) => <li key={o}>{o}</li>)}</ul>
-          <Link className="mt-4 inline-block text-sm underline" to="/auditorias">Ver em Auditorias</Link>
+          <div className="mt-4 flex flex-wrap items-center gap-3"><MessageWhatsapp data={business.data} message={audit.message} /><Link className="text-sm underline" to="/auditorias">Ver em Auditorias</Link></div>
         </div>
       )}
     </section>

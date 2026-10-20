@@ -25,6 +25,7 @@ export function PrintPicker({ files, onChange, busy }: PrintPickerProps) {
       setError(''); onChange([...files, ...incoming]);
     }} />
     <Button type="button" className="mt-3" variant="bordered" size="sm" disabled={busy} onClick={() => input.current?.click()}>Escolher prints</Button>
+    <p className="mt-2 text-xs text-muted-foreground">Para ler a linguagem visual, envie também um print do feed, com as primeiras publicações.</p>
     {files.length > 0 && <ul className="mt-4 flex flex-wrap gap-3">{files.map((file, index) => <Thumbnail key={`${file.name}-${file.lastModified}-${index}`} file={file} remove={() => onChange(files.filter((_, i) => i !== index))} />)}</ul>}
     {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
   </div>;
