@@ -28,7 +28,7 @@ export async function askGemini(messages: ModelMessage[], instructions?: string)
     },
   });
   let failure: unknown;
-  const result = streamText({ model: provider(MODEL), messages, instructions, maxRetries: 0, onError: ({ error }) => { failure = error; } });
+  const result = streamText({ model: provider(MODEL), messages, ...(instructions ? { instructions } : {}), maxRetries: 0, onError: ({ error }) => { failure = error; } });
   let text: string;
   try { text = await result.text; } catch (e) { throw failure ?? e; }
   if (failure) throw failure;

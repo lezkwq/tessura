@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export const observationSchema = z.object({ id: z.string(), text: z.string().max(300), checked: z.boolean(), source: z.enum(['Maps', 'Print']) });
+export const observationSchema = z.object({ id: z.string(), text: z.string().max(300), checked: z.boolean(), source: z.enum(['Maps', 'Print']), kind: z.enum(['Data', 'Visual']).optional() });
 export const notesSchema = z.object({ complement: z.string().max(300).default(''), observations: z.array(observationSchema).max(30).default([]) });
 export type Observation = z.infer<typeof observationSchema>;
 export type AuditNotes = z.infer<typeof notesSchema>;
