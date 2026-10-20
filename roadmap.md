@@ -3,9 +3,9 @@
 - [x] Documented Apify searches, filtered reserve, ten-item batches and discard.
 - [x] Lead enrichment, list and detail.
 - [x] Validate flows, privacy and page metadata.
-- [ ] Etapa 0: Test previous retry, generation, desktop and mobile; correct failures.
-- [ ] Etapa 1: Hide successful key notice.
-- [ ] Etapa 2: Validate print picker, thumbnails and real reading.
+- [x] Etapa 0: Previously tested retry, generation, desktop and mobile; not repeated.
+- [x] Etapa 1: Previously removed successful key notice; not repeated.
+- [x] Etapa 2: Previously tested picker, thumbnails and real reading; not repeated.
 - [ ] Etapa 3: Fix AI instructions parameter; test complement generation, numbers and persistence.
 - [ ] Etapa 3B: Separate factual and visual print observations; persist and export visual items; test feed and profile top.
 - [ ] Etapa 4: Report duplicate audits before cleanup, enforce one audit per lead, confirm sent replacement.
