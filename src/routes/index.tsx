@@ -8,6 +8,7 @@ import { ArrowUpRight, Trash, UserPlus, MapPin } from '@phosphor-icons/react';
 import { ActionIcon } from '@/components/prospeccao/action-icon';
 import { listLeads } from '@/lib/prospeccao.functions';
 import { listAudits } from '@/lib/abordagem.functions';
+import { readSearchSession, writeSearchSession } from '@/lib/search-session';
 import {
   addLead,
   beginSearch,
@@ -37,7 +38,6 @@ export const Route = createFileRoute("/")({
 });
 
 const emptyForm = { city: "", state: "SP", niche: "" };
-const ACTIVE_KEY = "prospeccao:busca-ativa";
 
 function SearchPage() {
   const queryClient = useQueryClient();
@@ -60,30 +60,37 @@ function SearchPage() {
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
   const [restoring, setRestoring] = useState(true);
 
-  function remember(id: string) {
-    window.localStorage.setItem(ACTIVE_KEY, id);
-  }
-
   function show(result: { search: Search | null; batch: Business[] }) {
     if (!result.search) return;
     setSearch(result.search);
-    setBatch(sortByScore(result.batch));
-    setAdded(new Set(result.batch.filter((b) => b.is_lead).map((b) => b.id)));
+    setBatch(previous => sortByScore([...new Map([...(search?.id === result.search?.id ? previous : []), ...result.batch].map(b => [b.id, b])).values()]));
+    setAdded(previous => new Set([...previous, ...result.batch.filter((b) => b.is_lead).map((b) => b.id)]));
     setForm({ city: result.search.city, state: result.search.state, niche: result.search.niche });
-    remember(result.search.id);
   }
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(ACTIVE_KEY);
-    if (stored === "none") { setRestoring(false); return; }
-    restoreSearch({ data: stored ? { id: stored } : {} })
-      .then((result) => { if (alive.current) show(result); })
+    const stored = readSearchSession(() => window.sessionStorage);
+    if (stored) setForm(stored.form);
+    if (!stored?.searchId) { setRestoring(false); return; }
+    restoreSearch({ data: { id: stored.searchId } })
+      .then((result) => {
+        if (!alive.current) return;
+        setSearch(result.search);
+        const rows = result.batch.filter(b => stored.batchIds.includes(b.id));
+        setBatch(sortByScore(rows));
+        setAdded(new Set(rows.filter(b => b.is_lead).map(b => b.id)));
+      })
       .catch((e) => { if (alive.current) setError(e instanceof Error ? e.message : "Não foi possível restaurar a busca."); })
       .finally(() => { if (alive.current) setRestoring(false); });
   }, []);
 
+  useEffect(() => {
+    if (restoring) return;
+    writeSearchSession(() => window.sessionStorage, { form, searchId: search?.id ?? null, batchIds: batch.map(b => b.id) });
+  }, [form, search, batch, restoring]);
+
   function reset() {
-    window.localStorage.setItem(ACTIVE_KEY, "none");
+    writeSearchSession(() => window.sessionStorage, null);
     setSearch(null); setBatch([]); setAdded(new Set()); setLeaving(new Set());
     setForm(emptyForm); setStatus(""); setError(""); setConfirming("");
   }
@@ -130,7 +137,7 @@ function SearchPage() {
     try {
       let result = await beginSearch({ data: input });
       if (result.search.status === "running") result = await wait(result.search.id);
-      show(await restoreSearch({ data: { id: result.search.id } }));
+      show(result);
       setStatus(result.search.status === "exhausted" ? "Não há mais resultados para esta busca." : "");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível buscar.");

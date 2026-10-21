@@ -6,9 +6,9 @@
 - [x] Etapa 0: Previously tested retry, generation, desktop and mobile; not repeated.
 - [x] Etapa 1: Previously removed successful key notice; not repeated.
 - [x] Etapa 2: Previously tested picker, thumbnails and real reading; not repeated.
-- [ ] Etapa 3: Fix AI instructions parameter; test complement generation, numbers and persistence.
-- [ ] Etapa 3B: Separate factual and visual print observations; persist and export visual items; test feed and profile top.
-- [ ] Etapa 4: Report duplicate audits before cleanup, enforce one audit per lead, confirm sent replacement.
-- [ ] Etapa 5: Generated-message WhatsApp button and exact address check.
-- [ ] Etapa 6: Markdown exports from saved data and missing contacts.
+- [x] Etapa 3: Instructions and persistence previously passed; real numeric complement generated 54 words, omitted 847, no unsupported number reached the saved message.
+- [ ] Etapa 3B: Feed and profile-top real reading blocked: original images unavailable; owner asked to reattach.
+- [x] Etapa 4: Previous cleanup/uniqueness retained; cancel unchanged, confirmed Domus updates existing audit to não enviada.
+- [x] Etapa 5: Both LL WhatsApp addresses identical; decoded text equals message and digits preserved.
+- [x] Etapa 6: Downloaded LL and Tao Markdown; verified names, saved data and missing Instagram.
 - [ ] Etapa 7: Guarded tab-session-only search retention.

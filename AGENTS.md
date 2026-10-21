@@ -15,7 +15,7 @@
 - Persist actor jobs, global business identities and per-search delivery records in Cloud, because asynchronous runs and batch deduplication must survive reloads.
 - Read the Apify token only from the APIFY_TOKEN backend secret and call api.apify.com from server code, because the owner supplies their own key and it must never reach the browser.
 - Use one auth-state subscriber in the root provider and a private owner role assigned transactionally on first registration, because this tool permits exactly one account.
-- Restore the Busca screen from shown reserves in the database, with only the active search id kept in localStorage, because results must survive navigation and reloads.
+- Persist Busca form, active search ID and shown batch IDs only in guarded sessionStorage; refresh only those IDs from reserves, because new tab sessions must never restore database history while reserves retain delivery deduplication.
 - Generate WhatsApp messages via Lovable AI in server functions and re-validate every output with pure code validators, because model output is untrusted.
 - Normalize numeric and Portuguese written cardinal claims in shared pure helpers and exempt only the specific digit occurrence in the duration phrase, because source-grounding must not depend on model compliance.
 - Reuse one lead-detail component inside the lead workspace for list and direct detail URLs, because desktop split views and mobile views must retain the same actions and queries.
