@@ -3,12 +3,10 @@
 - [x] Documented Apify searches, filtered reserve, ten-item batches and discard.
 - [x] Lead enrichment, list and detail.
 - [x] Validate flows, privacy and page metadata.
-- [x] Etapa 0: Previously tested retry, generation, desktop and mobile; not repeated.
-- [x] Etapa 1: Previously removed successful key notice; not repeated.
-- [x] Etapa 2: Previously tested picker, thumbnails and real reading; not repeated.
-- [x] Etapa 3: Instructions and persistence previously passed; real numeric complement generated 54 words, omitted 847, no unsupported number reached the saved message.
-- [ ] Etapa 3B: Feed and profile-top real reading blocked: original images unavailable; owner asked to reattach.
-- [x] Etapa 4: Previous cleanup/uniqueness retained; cancel unchanged, confirmed Domus updates existing audit to não enviada.
-- [x] Etapa 5: Both LL WhatsApp addresses identical; decoded text equals message and digits preserved.
-- [x] Etapa 6: Downloaded LL and Tao Markdown; verified names, saved data and missing Instagram.
-- [ ] Etapa 7: Guarded tab-session-only search retention.
+- [x] Etapas 0-7 anteriores concluídas; etapa 7 validada pelo dono no navegador.
+- [x] Item 1: botões Marcar todas as de dados e Desmarcar todas; aviso sem feed vira nota simples, nunca marcável, fora da mensagem e do .md.
+- [x] Item 2: instruções de leitura com acentos, descrição por publicação, sem generalizações nem julgamentos, marcas de terceiros ignoradas.
+- [x] Item 3: .md só com observações marcadas, sem seção repetida, Instagram dos prints e prefixo A Apify não trouxe; complemento, mensagem e status confirmados.
+- [ ] Item 4a: leitura real dos dois prints do tao.acai bloqueada, imagens não estão disponíveis; aguarda reenvio.
+- [x] Item 4d: três formatos de telefone verificados, 55 sem duplicar, 8 dígitos aceitos, nono dígito nunca adicionado.
+- [x] Item 4e: regra dos botões coberta por testes automáticos (37 testes passando).
