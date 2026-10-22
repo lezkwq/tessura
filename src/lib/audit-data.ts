@@ -9,3 +9,6 @@ export function photoCount(data: Record<string, unknown>): number | null {
   const count = data['imagesCount'];
   return typeof count === 'number' && Number.isInteger(count) && count >= 0 ? count : null;
 }
+export const NO_FEED_OBSERVATION = 'O print não mostra o feed, então não dá para avaliar a linguagem visual.';
+/** The no-feed notice is informational only: never checkable, never in messages or exports. */
+export function isNoFeedObservation(text: string): boolean { return text.trim() === NO_FEED_OBSERVATION; }
