@@ -6,7 +6,7 @@ import { mapsObservations, type Audit } from "@/lib/abordagem";
 import type { Business } from "@/lib/prospeccao";
 import { useServerFn } from '@tanstack/react-start';
 import { useQueryClient } from '@tanstack/react-query';
-import { parseNotes, photoCount, type Observation } from '@/lib/audit-data';
+import { isNoFeedObservation, parseNotes, photoCount, type Observation } from '@/lib/audit-data';
 import { PrintPicker } from './print-picker';
 import { MessageWhatsapp } from './message-whatsapp';
 
@@ -61,7 +61,7 @@ export function Auditoria({ business }: { business: Business }) {
     if (audit?.status === 'enviada' && !confirmed) { setConfirming(true); return; }
     setConfirming(false); setBusy("msg"); setError("");
     try {
-      const chosen = obs.filter((o) => o.checked && o.text.trim()).map((o) => o.text.trim());
+      const chosen = obs.filter((o) => o.checked && o.text.trim() && !isNoFeedObservation(o.text)).map((o) => o.text.trim());
       await saveFn({ data: { id: business.id, notes: { complement, observations: obs } } });
       setAudit(await generateFn({ data: { id: business.id, observations: chosen, complement, observation_state: obs, confirmed } }));
       await qc.invalidateQueries({ queryKey: ['audits'] });
@@ -71,6 +71,8 @@ export function Auditoria({ business }: { business: Business }) {
   }
 
   const update = (id: string, patch: Partial<Obs>) => setObs((o) => o.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const markAllData = () => setObs((o) => o.map((x) => (x.kind === 'Visual' || isNoFeedObservation(x.text) ? x : { ...x, checked: true })));
+  const uncheckAll = () => setObs((o) => o.map((x) => ({ ...x, checked: false })));
   const anyChecked = obs.some((o) => o.checked && o.text.trim());
 
   return (
@@ -84,13 +86,21 @@ export function Auditoria({ business }: { business: Business }) {
       </div>
       <div className="mt-6">
         <p className="data-label">Observações</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button variant="bordered" size="sm" disabled={!ready || busy !== ''} onClick={markAllData}>Marcar todas as de dados</Button>
+          <Button variant="bordered" size="sm" disabled={!ready || busy !== ''} onClick={uncheckAll}>Desmarcar todas</Button>
+        </div>
         <ul className="mt-2 space-y-2">
           {obs.map((o) => (
+            isNoFeedObservation(o.text) ? (
+              <li key={o.id} className="card-cream px-4 py-3 text-sm text-muted-foreground">{o.text}</li>
+            ) : (
             <li key={o.id} className="flex items-start gap-3">
               <input type="checkbox" className="mt-2" checked={o.checked} aria-label="Usar observação" onChange={(e) => update(o.id, { checked: e.target.checked })} />
               <textarea rows={2} aria-label="Observação" className="field min-w-0 flex-1 text-sm" value={o.text} onChange={(e) => update(o.id, { text: e.target.value })} />
               <span className="mt-2 text-xs text-muted-foreground">{o.source}{o.kind === 'Visual' ? ' · Visual' : ''}</span>
             </li>
+            )
           ))}
         </ul>
       </div>

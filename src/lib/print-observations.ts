@@ -1,5 +1,6 @@
+import { NO_FEED_OBSERVATION } from './audit-data';
 export interface PrintObservation { text: string; kind: 'Data' | 'Visual' }
-export const NO_FEED = 'O print não mostra o feed, então não dá para avaliar a linguagem visual.';
+export const NO_FEED = NO_FEED_OBSERVATION;
 /** Separate caps prevent profile facts from truncating the visual reading. */
 export function parsePrintObservations(output: string): PrintObservation[] {
   const seen = new Set<string>();

@@ -1,6 +1,6 @@
 import { type Business, mapsUrl, placeData, safeUrl, weightedScore } from './prospeccao';
 import { type Audit } from './abordagem';
-import { parseNotes, photoCount, type AuditNotes } from './audit-data';
+import { isNoFeedObservation, parseNotes, photoCount, type AuditNotes } from './audit-data';
 import { displayName, displayCity, formatPhone, formatRating, formatHours } from './format';
 import { whatsappNumber } from './abordagem';
 
@@ -22,6 +22,15 @@ export function leadMarkdown(business: Business, audit: Audit | null, notes: Aud
     const unique = [...new Set(values.filter(Boolean))];
     if (unique.length) unique.forEach(v => lines.push(`- ${label}: ${v}`)); else missing.push(label);
   }
+  /** Instagram handle mentioned in checked print observations, when the actor did not return one. */
+  function printInstagramUser(): string | null {
+    for (const o of notes.observations) {
+      if (!o.checked || o.source !== 'Print') continue;
+      const match = o.text.match(/@([a-z0-9._]{2,30})/i) ?? o.text.match(/(?:perfil|usuário|usuario)\s+(?:é\s+|:\s*)?@?([a-z0-9._]{2,30})/i);
+      if (match?.[1]) return match[1];
+    }
+    return null;
+  }
   const rawPhone = d['phoneUnformatted'] ?? d['phone'];
   contact('Telefone', typeof rawPhone === 'string' ? [formatPhone(rawPhone)] : []);
   const phone = whatsappNumber(rawPhone);
@@ -33,6 +42,11 @@ export function leadMarkdown(business: Business, audit: Audit | null, notes: Aud
   const facebook = [...strings(d['facebooks']), ...(website?.includes('facebook.com/') ? [website] : [])];
   contact('Rede social', [...socials, ...instagram, ...facebook]);
   contact('Instagram', instagram); contact('Facebook', facebook);
+  const instagramMissing = missing.includes('Instagram');
+  if (instagramMissing) {
+    const user = printInstagramUser();
+    missing.splice(missing.indexOf('Instagram'), 1, user ? `Instagram: a Apify não trouxe. Usuário informado nos prints: ${user}` : 'Instagram');
+  }
   contact('E-mail', strings(d['emails']));
   const other = [...strings(d['links']), ...strings(d['otherLinks']), ...strings(d['websites']), ...strings(d['linkedIns']), ...strings(d['twitters']), ...strings(d['youtubes']), ...strings(d['tiktoks'])];
   if (other.length) contact('Outros links', other);
@@ -55,13 +69,14 @@ export function leadMarkdown(business: Business, audit: Audit | null, notes: Aud
   strings(d['imageUrls']).forEach(url => lines.push(`- Foto: ${url}`));
   lines.push(`- Link do Maps: ${mapsUrl(business)}`, `- placeId: ${business.place_id}`, '', '## O que eu adicionei');
   if (notes.complement) lines.push('', '### Complemento', notes.complement);
-  const observations = notes.observations.length ? notes.observations : parseNotes({ observations: audit?.observation_state }).observations;
+  const allObservations = notes.observations.length ? notes.observations : parseNotes({ observations: audit?.observation_state }).observations;
+  // Only checked observations enter the file, mirroring the screen; the no-feed notice never does.
+  const observations = allObservations.filter(o => o.checked && !isNoFeedObservation(o.text));
   function observationGroup(title: string, selected: typeof observations) {
     if (!selected.length) return;
-    lines.push('', `### ${title}`, ...selected.map(o => `- [${o.checked ? 'x' : ' '}] ${o.text} (${o.source}, ${o.checked ? 'marcada' : 'não marcada'})`));
+    lines.push('', `### ${title}`, ...selected.map(o => `- ${o.text} (${o.source})`));
   }
   observationGroup('Observações', observations.filter(o => o.kind !== 'Visual'));
-  observationGroup('Texto lido dos prints', observations.filter(o => o.source === 'Print' && o.kind !== 'Visual'));
   observationGroup('Linguagem visual (do print)', observations.filter(o => o.kind === 'Visual'));
   if (audit) {
     lines.push('', '### Mensagem atual', audit.message, '', `Status: ${audit.status}`, `Data: ${audit.created_at}`);
@@ -69,7 +84,7 @@ export function leadMarkdown(business: Business, audit: Audit | null, notes: Aud
     if (audit.complement && audit.complement !== notes.complement) lines.push('', 'Complemento usado na mensagem:', audit.complement);
     if (audit.observations.length) lines.push('', 'Observações usadas na mensagem:', ...audit.observations.map(o => `- ${o}`));
   }
-  if (missing.length) lines.push('', '## Não encontrado', ...missing.map(s => `- ${s}`));
+  if (missing.length) lines.push('', '## Não encontrado', ...missing.map(s => `- ${s.startsWith('Instagram:') ? s : `A Apify não trouxe: ${s}`}`));
   return `${lines.join('\n')}\n`;
 }
 
