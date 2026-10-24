@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as RedefinirRouteImport } from './routes/redefinir'
+import { Route as SenhaPerdidaRouteImport } from './routes/senha-perdida'
 import { Route as AuthenticatedAuditoriasRouteImport } from './routes/_authenticated/auditorias'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLeadsRouteRouteImport } from './routes/_authenticated/leads/route'
@@ -31,6 +33,16 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedefinirRoute = RedefinirRouteImport.update({
+  id: '/redefinir',
+  path: '/redefinir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SenhaPerdidaRoute = SenhaPerdidaRouteImport.update({
+  id: '/senha-perdida',
+  path: '/senha-perdida',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAuditoriasRoute = AuthenticatedAuditoriasRouteImport.update({
@@ -67,6 +79,8 @@ const AuthenticatedLeadsIdRoute = AuthenticatedLeadsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/redefinir': typeof RedefinirRoute
+  '/senha-perdida': typeof SenhaPerdidaRoute
   '/leads': typeof AuthenticatedLeadsRouteRouteWithChildren
   '/auditorias': typeof AuthenticatedAuditoriasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -77,6 +91,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/redefinir': typeof RedefinirRoute
+  '/senha-perdida': typeof SenhaPerdidaRoute
   '/auditorias': typeof AuthenticatedAuditoriasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/regras': typeof AuthenticatedRegrasRoute
@@ -88,6 +104,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/redefinir': typeof RedefinirRoute
+  '/senha-perdida': typeof SenhaPerdidaRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteRouteWithChildren
   '/_authenticated/auditorias': typeof AuthenticatedAuditoriasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -100,6 +118,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/redefinir'
+    | '/senha-perdida'
     | '/leads'
     | '/auditorias'
     | '/dashboard'
@@ -110,6 +130,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/redefinir'
+    | '/senha-perdida'
     | '/auditorias'
     | '/dashboard'
     | '/regras'
@@ -120,6 +142,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/redefinir'
+    | '/senha-perdida'
     | '/_authenticated/leads'
     | '/_authenticated/auditorias'
     | '/_authenticated/dashboard'
@@ -132,6 +156,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RedefinirRoute: typeof RedefinirRoute
+  SenhaPerdidaRoute: typeof SenhaPerdidaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -155,6 +181,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redefinir': {
+      id: '/redefinir'
+      path: '/redefinir'
+      fullPath: '/redefinir'
+      preLoaderRoute: typeof RedefinirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/senha-perdida': {
+      id: '/senha-perdida'
+      path: '/senha-perdida'
+      fullPath: '/senha-perdida'
+      preLoaderRoute: typeof SenhaPerdidaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/auditorias': {
@@ -239,6 +279,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  RedefinirRoute: RedefinirRoute,
+  SenhaPerdidaRoute: SenhaPerdidaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
