@@ -80,6 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
+      { name: "robots", content: "noindex, nofollow" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Prospecção" },
       { name: "description", content: "Sua ferramenta pessoal para encontrar empresas sem site próprio." },
