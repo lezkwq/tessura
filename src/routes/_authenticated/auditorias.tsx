@@ -12,7 +12,7 @@ import { MessageWhatsapp } from '@/components/prospeccao/message-whatsapp';
 import { parseNotes } from '@/lib/audit-data';
 import { metadata, placeData, text } from "@/lib/prospeccao";
 
-export const Route = createFileRoute("/auditorias")({
+export const Route = createFileRoute("/_authenticated/auditorias")({
   head: () => metadata("Auditorias", "Mensagens de WhatsApp geradas para os leads."),
   component: () => <Gate><AuditsPage /></Gate>,
 });

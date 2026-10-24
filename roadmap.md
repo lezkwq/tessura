@@ -10,3 +10,8 @@
 - [ ] Item 4a: leitura real dos dois prints do tao.acai bloqueada, imagens não estão disponíveis; aguarda reenvio.
 - [x] Item 4d: três formatos de telefone verificados, 55 sem duplicar, 8 dígitos aceitos, nono dígito nunca adicionado.
 - [x] Item 4e: regra dos botões coberta por testes automáticos (37 testes passando).
+
+- [ ] Etapa 8: login separado, rotas protegidas e navegação, sessão da Busca preservada.
+- [ ] Etapa 9: senha visível, recuperação, noindex; desligar cadastro apenas após acesso confirmado.
+- [ ] Etapa 10: validar autenticação de servidor, RLS, segredos e limites de login.
+- [ ] Etapa 11: relatório dos testes e limitações.

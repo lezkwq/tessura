@@ -7,7 +7,7 @@ import { getRules, resetRules, saveRules } from "@/lib/abordagem.functions";
 import { metadata } from "@/lib/prospeccao";
 import type { Rules } from "@/lib/abordagem";
 
-export const Route = createFileRoute("/regras")({
+export const Route = createFileRoute("/_authenticated/regras")({
   head: () => metadata("Regras", "Instruções e validadores das mensagens de WhatsApp."),
   component: () => <Gate><RulesPage /></Gate>,
 });

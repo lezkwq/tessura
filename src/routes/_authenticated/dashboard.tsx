@@ -28,7 +28,7 @@ import {
   type Search,
 } from "@/lib/prospeccao";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => metadata("Busca", "Encontre empresas sem site próprio na sua cidade."),
   component: () => (
     <Gate>
