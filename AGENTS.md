@@ -19,3 +19,5 @@
 - Generate WhatsApp messages via Lovable AI in server functions and re-validate every output with pure code validators, because model output is untrusted.
 - Normalize numeric and Portuguese written cardinal claims in shared pure helpers and exempt only the specific digit occurrence in the duration phrase, because source-grounding must not depend on model compliance.
 - Reuse one lead-detail component inside the lead workspace for list and direct detail URLs, because desktop split views and mobile views must retain the same actions and queries.
+- Place private content routes under the client-only _authenticated gate, keep login and recovery public, and retain server owner checks; route protection alone never authorizes data access.
+- Preserve hosted auth settings and disable registration only after the owner's password sign-in is confirmed; changing unrelated settings or credentials risks locking out the owner.

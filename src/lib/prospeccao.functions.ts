@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { assertOwner, startRun, readRun, readDataset, cleanPlace, baseInput } from './apify.server';
 import { states, weightedScore, websiteType, type Business } from './prospeccao';
-export const keyStatus=createServerFn({method:'GET'}).handler(()=>({configured:Boolean(process.env['APIFY_TOKEN'])}));
+export const keyStatus=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{await assertOwner(context.supabase);return {configured:Boolean(process.env['APIFY_TOKEN'])};});
 export const latestSearch=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{ const {data,error}=await context.supabase.from('searches').select('*').order('updated_at',{ascending:false}).limit(1).maybeSingle(); if(error)throw new Error('Não foi possível carregar a última busca.');return data; });
 const searchSchema=z.object({city:z.string().trim().min(2).max(100),state:z.string().refine(s=>states.includes(s)),niche:z.string().trim().min(2).max(120)});
 const idSchema=z.object({id:z.string().uuid()});
