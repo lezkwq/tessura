@@ -9,6 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedAuditoriasRouteImport } from './routes/_authenticated/auditorias'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLeadsRouteRouteImport } from './routes/_authenticated/leads/route'
@@ -16,25 +19,39 @@ import { Route as AuthenticatedRegrasRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads/index'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads/$id'
 
-const AuthenticatedAuditoriasRoute = AuthenticatedAuditoriasRouteImport.update({
-  id: '/_authenticated/auditorias',
-  path: '/auditorias',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAuditoriasRoute = AuthenticatedAuditoriasRouteImport.update({
+  id: '/auditorias',
+  path: '/auditorias',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/_authenticated/dashboard',
+  id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeadsRouteRoute = AuthenticatedLeadsRouteRouteImport.update({
-  id: '/_authenticated/leads',
+  id: '/leads',
   path: '/leads',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRegrasRoute = AuthenticatedRegrasRouteImport.update({
-  id: '/_authenticated/regras',
+  id: '/regras',
   path: '/regras',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
   id: '/',
@@ -48,6 +65,8 @@ const AuthenticatedLeadsIdRoute = AuthenticatedLeadsIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/leads': typeof AuthenticatedLeadsRouteRouteWithChildren
   '/auditorias': typeof AuthenticatedAuditoriasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -56,6 +75,8 @@ export interface FileRoutesByFullPath {
   '/leads/': typeof AuthenticatedLeadsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/auditorias': typeof AuthenticatedAuditoriasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/regras': typeof AuthenticatedRegrasRoute
@@ -64,6 +85,9 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/login': typeof LoginRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteRouteWithChildren
   '/_authenticated/auditorias': typeof AuthenticatedAuditoriasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -74,6 +98,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
+    | '/login'
     | '/leads'
     | '/auditorias'
     | '/dashboard'
@@ -81,9 +107,19 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auditorias' | '/dashboard' | '/regras' | '/leads/$id' | '/leads'
+  to:
+    | '/'
+    | '/login'
+    | '/auditorias'
+    | '/dashboard'
+    | '/regras'
+    | '/leads/$id'
+    | '/leads'
   id:
     | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
     | '/_authenticated/leads'
     | '/_authenticated/auditorias'
     | '/_authenticated/dashboard'
@@ -93,41 +129,61 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthenticatedLeadsRouteRoute: typeof AuthenticatedLeadsRouteRouteWithChildren
-  AuthenticatedAuditoriasRoute: typeof AuthenticatedAuditoriasRoute
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedRegrasRoute: typeof AuthenticatedRegrasRoute
+  IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/auditorias': {
       id: '/_authenticated/auditorias'
       path: '/auditorias'
       fullPath: '/auditorias'
       preLoaderRoute: typeof AuthenticatedAuditoriasRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads': {
       id: '/_authenticated/leads'
       path: '/leads'
       fullPath: '/leads'
       preLoaderRoute: typeof AuthenticatedLeadsRouteRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/regras': {
       id: '/_authenticated/regras'
       path: '/regras'
       fullPath: '/regras'
       preLoaderRoute: typeof AuthenticatedRegrasRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads/': {
       id: '/_authenticated/leads/'
@@ -162,11 +218,27 @@ const AuthenticatedLeadsRouteRouteWithChildren =
     AuthenticatedLeadsRouteRouteChildren,
   )
 
-const rootRouteChildren: RootRouteChildren = {
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLeadsRouteRoute: typeof AuthenticatedLeadsRouteRouteWithChildren
+  AuthenticatedAuditoriasRoute: typeof AuthenticatedAuditoriasRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedRegrasRoute: typeof AuthenticatedRegrasRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRouteRoute: AuthenticatedLeadsRouteRouteWithChildren,
   AuthenticatedAuditoriasRoute: AuthenticatedAuditoriasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedRegrasRoute: AuthenticatedRegrasRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
