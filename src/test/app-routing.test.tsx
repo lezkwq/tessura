@@ -21,13 +21,13 @@ describe("App routing", () => {
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
   it('sends signed-out protected visits to /login', async () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null });
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: { name: 'AuthSessionMissingError', message: 'No session', status: 400, __isAuthError: true } });
     const guard = protectedRoute.options.beforeLoad;
     if (!guard) throw new Error('Missing guard');
     await expect((guard as () => Promise<void>)()).rejects.toMatchObject({ options: { to: '/login', replace: true } });
   });
   it('sends signed-out home visits to /login', async () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null });
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: { name: 'AuthSessionMissingError', message: 'No session', status: 400, __isAuthError: true } });
     const guard = homeRoute.options.beforeLoad;
     if (!guard) throw new Error('Missing home guard');
     await expect((guard as () => Promise<void>)()).rejects.toMatchObject({ options: { to: '/login' } });

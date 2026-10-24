@@ -11,7 +11,10 @@
 - [x] Item 4d: três formatos de telefone verificados, 55 sem duplicar, 8 dígitos aceitos, nono dígito nunca adicionado.
 - [x] Item 4e: regra dos botões coberta por testes automáticos (37 testes passando).
 
-- [ ] Etapa 8: login separado, rotas protegidas e navegação, sessão da Busca preservada.
-- [ ] Etapa 9: senha visível, recuperação, noindex; desligar cadastro apenas após acesso confirmado.
-- [ ] Etapa 10: validar autenticação de servidor, RLS, segredos e limites de login.
-- [ ] Etapa 11: relatório dos testes e limitações.
+- [x] Etapa 8: login separado, rotas protegidas e navegação; campos da Busca preservados em teste de navegador.
+- [x] Etapa 9: senha visível, erro genérico, recuperação com resposta HTTP 200, noindex e cadastro removido da tela.
+- [ ] Etapa 9 final: desligar cadastro e testar recusa direta; aguarda confirmação da entrada do dono com senha e leitura dos valores atuais HIBP nas configurações hospedadas.
+- [ ] Etapa 9 recuperação completa: envio aceito; aguarda recebimento do email e uso do link pelo dono, sem trocar sua senha durante testes.
+- [x] Etapa 10: funções exigem sessão, keyStatus protegido; RLS ativo e leituras anônimas vazias nas sete tabelas; nenhum acesso anônimo concedido.
+- [ ] Etapa 10: limite de tentativas hospedado não exposto pelas ferramentas de leitura; não confirmado.
+- [x] Etapa 11: relatar evidências, correções e limitações; preservar conta existente e configurações desconhecidas.
