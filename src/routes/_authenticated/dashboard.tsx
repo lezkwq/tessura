@@ -10,6 +10,7 @@ import { listLeads } from '@/lib/prospeccao.functions';
 import { listAudits } from '@/lib/abordagem.functions';
 import { readSearchSession, writeSearchSession } from '@/lib/search-session';
 import { emptySearchForm } from '@/lib/search-input';
+import { diagnosticFetch, queryErrorMessage } from '@/lib/query-error';
 import {
   addLead,
   beginSearch,
@@ -49,14 +50,15 @@ function SearchPage() {
   const [storageWarning, setStorageWarning] = useState('');
   const [confirming, setConfirming] = useState("");
   const [pending, setPending] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const busy = useRef(false);
   const alive = useRef(true);
 
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
-  const keyQuery = useQuery({ queryKey: ["apify-key"], queryFn: () => keyStatus() });
-  const leads = useQuery({ queryKey: ['leads'], queryFn: () => listLeads() });
-  const audits = useQuery({ queryKey: ['audits'], queryFn: () => listAudits() });
+  const keyQuery = useQuery({ queryKey: ["apify-key"], queryFn: () => keyStatus({ fetch: diagnosticFetch }), retry: false, enabled: false });
+  const leads = useQuery({ queryKey: ['leads'], queryFn: () => listLeads({ fetch: diagnosticFetch }), retry: false, enabled: false });
+  const audits = useQuery({ queryKey: ['audits'], queryFn: () => listAudits({ fetch: diagnosticFetch }), retry: false, enabled: false });
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
   const [restoring, setRestoring] = useState(true);
@@ -93,6 +95,7 @@ function SearchPage() {
   function reset() {
     writeSearchSession(() => window.sessionStorage, null);
     setSearch(null); setBatch([]); setAdded(new Set()); setLeaving(new Set());
+    setHasSearched(false);
     setForm(emptyForm); setStatus(""); setError(""); setConfirming("");
   }
 
@@ -122,7 +125,7 @@ function SearchPage() {
     for (let i = 0; i < 90; i += 1) {
       await new Promise((resolve) => setTimeout(resolve, 4000));
       if (!alive.current) throw new Error("A busca foi interrompida.");
-      const result = await pollSearch({ data: { id: searchId } });
+      const result = await pollSearch({ data: { id: searchId }, fetch: diagnosticFetch });
       if (result.search.status !== "running") return result;
     }
     throw new Error("A busca demorou demais. Tente novamente.");
@@ -132,16 +135,21 @@ function SearchPage() {
     if (busy.current) return;
     busy.current = true;
     setPending(true);
+    setHasSearched(true);
     setError("");
     setConfirming("");
     setStatus("Buscando empresas...");
     try {
-      let result = await beginSearch({ data: input });
+      void leads.refetch();
+      void audits.refetch();
+      const checkedKey = await keyQuery.refetch({ throwOnError: true });
+      if (!checkedKey.data?.configured) throw new Error('A chave do Apify está ausente.');
+      let result = await beginSearch({ data: input, fetch: diagnosticFetch });
       if (result.search.status === "running") result = await wait(result.search.id);
       show(result);
       setStatus(!result.batch.length && result.search.status === "exhausted" ? "Não há mais resultados para esta busca." : "");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Não foi possível buscar.");
+      setError(queryErrorMessage(e));
       setStatus("");
     } finally {
       busy.current = false;
@@ -149,13 +157,25 @@ function SearchPage() {
     }
   }
 
-  const configured = keyQuery.data?.configured ?? false;
+  const initialQueries = [
+    { label: 'Verificar o acesso à busca', query: keyQuery },
+    { label: 'Carregar seus leads', query: leads },
+    { label: 'Carregar suas auditorias', query: audits },
+  ];
+  const failedQueries = hasSearched ? initialQueries.filter(({ query }) => query.isError) : [];
+  const retrying = initialQueries.some(({ query }) => query.isFetching);
 
   return (
     <div className="app-container py-14">
       <h1 className="page-title">Olá, <strong>Leandro</strong> 👋</h1>
-      <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.data && audits.data ? (() => { const pend = audits.data.filter(a => a.status === 'não enviada').length; return `${plural(leads.data.length, 'lead salvo', 'leads salvos')} · ${plural(pend, 'auditoria não enviada', 'auditorias não enviadas')}`; })() : 'Carregando seus números...'}</p>
-      {keyQuery.data?.configured === false && <p role="alert" className="mb-6 text-sm text-destructive">A chave do Apify está ausente.</p>}
+      {hasSearched && <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.isError || audits.isError ? 'Não foi possível atualizar seus números. Veja o motivo abaixo.' : leads.data && audits.data ? (() => { const pend = audits.data.filter(a => a.status === 'não enviada').length; return `${plural(leads.data.length, 'lead salvo', 'leads salvos')} · ${plural(pend, 'auditoria não enviada', 'auditorias não enviadas')}`; })() : 'Carregando seus números...'}</p>}
+      {failedQueries.length > 0 && <section role="alert" className="mb-6 rounded-xl border border-destructive p-4 text-sm">
+        <p className="font-medium">Não foi possível carregar parte da página.</p>
+        <ul className="mt-3 space-y-2">{failedQueries.map(({ label, query }) => <li key={label}><strong>{label}:</strong> <span className="break-words whitespace-pre-wrap">{queryErrorMessage(query.error)}</span></li>)}</ul>
+        <Button variant="bordered" size="sm" className="mt-4" disabled={retrying} onClick={() => { void Promise.allSettled(failedQueries.map(({ query }) => query.refetch())); }}>{retrying ? 'Tentando novamente...' : 'Tentar novamente'}</Button>
+      </section>}
+      {hasSearched && keyQuery.isFetching && <p role="status" className="mb-6 text-sm text-muted-foreground">Verificando o acesso à busca...</p>}
+      {hasSearched && keyQuery.data?.configured === false && <p role="alert" className="mb-6 text-sm text-destructive">A chave do Apify está ausente.</p>}
       <form
         className="search-panel mb-10"
         onSubmit={(e) => {
@@ -203,7 +223,7 @@ function SearchPage() {
           </label>
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="solid" type="submit" disabled={!configured || pending}>
+          <Button variant="solid" type="submit" disabled={pending}>
             {pending ? "Aguarde..." : "Buscar empresas"}
           </Button>
           {search && (
