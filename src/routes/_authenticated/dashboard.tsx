@@ -9,6 +9,7 @@ import { ActionIcon } from '@/components/prospeccao/action-icon';
 import { listLeads } from '@/lib/prospeccao.functions';
 import { listAudits } from '@/lib/abordagem.functions';
 import { readSearchSession, writeSearchSession } from '@/lib/search-session';
+import { emptySearchForm } from '@/lib/search-input';
 import {
   addLead,
   beginSearch,
@@ -22,7 +23,6 @@ import {
   metadata,
   placeData,
   safeUrl,
-  states,
   text,
   type Business,
   type Search,
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   ),
 });
 
-const emptyForm = { city: "", state: "SP", niche: "" };
+const emptyForm = emptySearchForm;
 
 function SearchPage() {
   const queryClient = useQueryClient();
@@ -46,6 +46,7 @@ function SearchPage() {
   const [batch, setBatch] = useState<Business[]>([]);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [storageWarning, setStorageWarning] = useState('');
   const [confirming, setConfirming] = useState("");
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
@@ -65,7 +66,6 @@ function SearchPage() {
     setSearch(result.search);
     setBatch(previous => sortByScore([...new Map([...(search?.id === result.search?.id ? previous : []), ...result.batch].map(b => [b.id, b])).values()]));
     setAdded(previous => new Set([...previous, ...result.batch.filter((b) => b.is_lead).map((b) => b.id)]));
-    setForm({ city: result.search.city, state: result.search.state, niche: result.search.niche });
   }
 
   useEffect(() => {
@@ -86,7 +86,8 @@ function SearchPage() {
 
   useEffect(() => {
     if (restoring) return;
-    writeSearchSession(() => window.sessionStorage, { form, searchId: search?.id ?? null, batchIds: batch.map(b => b.id) });
+    const saved = writeSearchSession(() => window.sessionStorage, { form, searchId: search?.id ?? null, batchIds: batch.map(b => b.id) });
+    setStorageWarning(saved ? '' : 'Não foi possível guardar a busca nesta aba. Os resultados continuam aqui, mas podem não voltar ao sair desta página.');
   }, [form, search, batch, restoring]);
 
   function reset() {
@@ -138,7 +139,7 @@ function SearchPage() {
       let result = await beginSearch({ data: input });
       if (result.search.status === "running") result = await wait(result.search.id);
       show(result);
-      setStatus(result.search.status === "exhausted" ? "Não há mais resultados para esta busca." : "");
+      setStatus(!result.batch.length && result.search.status === "exhausted" ? "Não há mais resultados para esta busca." : "");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível buscar.");
       setStatus("");
@@ -149,7 +150,6 @@ function SearchPage() {
   }
 
   const configured = keyQuery.data?.configured ?? false;
-  const canFetchMore = search?.status === "ready";
 
   return (
     <div className="app-container py-14">
@@ -165,30 +165,29 @@ function SearchPage() {
       >
         <div className="grid gap-5 sm:grid-cols-3">
           <label className="block">
-            <span className="field-label">Cidade</span>
+            <span className="field-label">País</span>
             <input
               className="field"
-              value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-              placeholder="Sua cidade"
+              value={form.country}
+              onChange={(e) => setForm({ ...form, country: e.target.value })}
+              placeholder="Brasil"
               required
               minLength={2}
               maxLength={100}
             />
           </label>
           <label className="block">
-            <span className="field-label">UF</span>
-            <select
+            <span className="field-label">Estado e cidade</span>
+            <p id="location-help" className="mb-2 text-xs text-muted-foreground">Escreva cidade e estado, por exemplo "Florianópolis, SC". Fora do Brasil, escreva a região e a cidade como se usa no país.</p>
+            <input
               className="field"
-              value={form.state}
-              onChange={(e) => setForm({ ...form, state: e.target.value })}
-            >
-              {states.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
+              aria-describedby="location-help"
+              aria-label="Estado e cidade"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              placeholder="Florianópolis, SC"
+              required minLength={2} maxLength={200}
+            />
           </label>
           <label className="block">
             <span className="field-label">Nicho</span>
@@ -207,16 +206,6 @@ function SearchPage() {
           <Button variant="solid" type="submit" disabled={!configured || pending}>
             {pending ? "Aguarde..." : "Buscar empresas"}
           </Button>
-          {canFetchMore && (
-            <Button
-              variant="bordered"
-              type="button"
-              disabled={!configured || pending}
-              onClick={() => void run(form)}
-            >
-              Mostrar mais 10
-            </Button>
-          )}
           {search && (
             <Button variant="quiet" type="button" disabled={pending} onClick={reset}>
               Nova busca
@@ -239,6 +228,7 @@ function SearchPage() {
           {error}
         </p>
       )}
+      {storageWarning && <p role="alert" className="mb-8 text-sm text-destructive">{storageWarning}</p>}
       {batch.length > 0 && (
         <div className="space-y-4">
           {batch.map((business, index) => (
@@ -263,7 +253,7 @@ function SearchPage() {
           <p className="text-muted-foreground">
             {search.status === "exhausted"
               ? "Não há mais resultados para esta busca."
-              : "Nenhuma empresa nesta leva. Mostre mais resultados para continuar."}
+              : "Nenhuma empresa sem site nesta busca."}
           </p>
         </div>
       )}
@@ -301,7 +291,7 @@ function BusinessCard({
 
   return (
     <article
-      className={`card-green card-enter${leaving ? " card-leaving" : ""}`}
+      className={`card-green card-enter [content-visibility:auto] [contain-intrinsic-size:auto_420px]${leaving ? " card-leaving" : ""}`}
       style={{ animationDelay: `${(index % 10) * 40}ms` }}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-4">
