@@ -182,6 +182,7 @@ function SearchPage() {
             <input
               className="field"
               aria-describedby="location-help"
+              aria-label="Estado e cidade"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
               placeholder="Florianópolis, SC"
