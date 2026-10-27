@@ -12,7 +12,7 @@
 ## Application architecture
 - Use TanStack server functions with owner authorization for all business data and Apify calls, because workspace credentials must never reach the browser.
 - Keep actor normalization and website filtering in shared pure helpers, because lists and lead detail must present only returned data.
-- Persist actor jobs, global business identities and per-search reserve records in Cloud; return all eligible reserves in one atomic delivery, because saved/discarded identities must remain excluded without pagination.
+- Persist actor jobs, global business identities and per-search delivery records in Cloud, because asynchronous runs and batch deduplication must survive reloads.
 - Read the Apify token only from the APIFY_TOKEN backend secret and call api.apify.com from server code, because the owner supplies their own key and it must never reach the browser.
 - Use one auth-state subscriber in the root provider and a private owner role assigned transactionally on first registration, because this tool permits exactly one account.
 - Persist Busca form, active search ID and shown batch IDs only in guarded sessionStorage; refresh only those IDs from reserves, because new tab sessions must never restore database history while reserves retain delivery deduplication.
@@ -21,5 +21,3 @@
 - Reuse one lead-detail component inside the lead workspace for list and direct detail URLs, because desktop split views and mobile views must retain the same actions and queries.
 - Place private content routes under the client-only _authenticated gate, keep login and recovery public, and retain server owner checks; route protection alone never authorizes data access.
 - Preserve hosted auth settings and disable registration only after the owner's password sign-in is confirmed; changing unrelated settings or credentials risks locking out the owner.
-- New searches use existing searches.city for the free-form location and searches.state for the ISO country code; keep legacy rows unchanged and use the existing uniqueness key to separate countries without adding columns. Lead city/state come from actor data, and country persists in existing businesses.data.countryCode through enrichment.
-- Resolve country names with a shared ISO-country helper for actor input and WhatsApp; foreign numbers require explicit international notation, because guessing a prefix could contact the wrong person.

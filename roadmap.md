@@ -18,7 +18,3 @@
 - [x] Etapa 10: funções exigem sessão, keyStatus protegido; RLS ativo e leituras anônimas vazias nas sete tabelas; nenhum acesso anônimo concedido.
 - [ ] Etapa 10: limite de tentativas hospedado não exposto pelas ferramentas de leitura; não confirmado.
 - [x] Etapa 11: relatar evidências, correções e limitações; preservar conta existente e configurações desconhecidas.
-- [ ] Etapa atual: explicar limite/custos/filtros antes das alterações.
-- [ ] Entregar todos os resultados, manter ranking e exclusões; País e Estado e cidade sem alterar styles.css.
-- [ ] Incluir país na sessão da aba e nos dados existentes do lead; WhatsApp seguro por país, sem mudar mensagens.
-- [ ] Testar Brasil, exterior, navegação, aba nova, telefones e relatar evidências.

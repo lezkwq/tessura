@@ -3,7 +3,6 @@ import { type Audit } from './abordagem';
 import { isNoFeedObservation, parseNotes, photoCount, type AuditNotes } from './audit-data';
 import { displayName, displayCity, formatPhone, formatRating, formatHours } from './format';
 import { whatsappNumber } from './abordagem';
-import { leadCountry } from './search-input';
 
 export function leadFilename(name: string): string {
   return `${name.toLocaleLowerCase('pt-BR').replace(/[\\/:*?"<>|]/g, '').replace(/[. ]+$/, '')}.md`;
@@ -34,7 +33,7 @@ export function leadMarkdown(business: Business, audit: Audit | null, notes: Aud
   }
   const rawPhone = d['phoneUnformatted'] ?? d['phone'];
   contact('Telefone', typeof rawPhone === 'string' ? [formatPhone(rawPhone)] : []);
-  const phone = whatsappNumber(rawPhone, leadCountry(d));
+  const phone = whatsappNumber(rawPhone);
   contact('WhatsApp', phone.number ? [`https://web.whatsapp.com/send?phone=${phone.number}`] : []);
   const website = safeUrl(d['website']);
   contact('Site no Maps', website ? [website] : []);

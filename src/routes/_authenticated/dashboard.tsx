@@ -9,8 +9,6 @@ import { ActionIcon } from '@/components/prospeccao/action-icon';
 import { listLeads } from '@/lib/prospeccao.functions';
 import { listAudits } from '@/lib/abordagem.functions';
 import { readSearchSession, writeSearchSession } from '@/lib/search-session';
-import { emptySearchForm } from '@/lib/search-input';
-import { diagnosticFetch, queryErrorMessage } from '@/lib/query-error';
 import {
   addLead,
   beginSearch,
@@ -24,6 +22,7 @@ import {
   metadata,
   placeData,
   safeUrl,
+  states,
   text,
   type Business,
   type Search,
@@ -38,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   ),
 });
 
-const emptyForm = emptySearchForm;
+const emptyForm = { city: "", state: "SP", niche: "" };
 
 function SearchPage() {
   const queryClient = useQueryClient();
@@ -47,18 +46,16 @@ function SearchPage() {
   const [batch, setBatch] = useState<Business[]>([]);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
-  const [storageWarning, setStorageWarning] = useState('');
   const [confirming, setConfirming] = useState("");
   const [pending, setPending] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   const busy = useRef(false);
   const alive = useRef(true);
 
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
-  const keyQuery = useQuery({ queryKey: ["apify-key"], queryFn: () => keyStatus({ fetch: diagnosticFetch }), retry: false, enabled: false });
-  const leads = useQuery({ queryKey: ['leads'], queryFn: () => listLeads({ fetch: diagnosticFetch }), retry: false, enabled: false });
-  const audits = useQuery({ queryKey: ['audits'], queryFn: () => listAudits({ fetch: diagnosticFetch }), retry: false, enabled: false });
+  const keyQuery = useQuery({ queryKey: ["apify-key"], queryFn: () => keyStatus() });
+  const leads = useQuery({ queryKey: ['leads'], queryFn: () => listLeads() });
+  const audits = useQuery({ queryKey: ['audits'], queryFn: () => listAudits() });
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
   const [restoring, setRestoring] = useState(true);
@@ -68,6 +65,7 @@ function SearchPage() {
     setSearch(result.search);
     setBatch(previous => sortByScore([...new Map([...(search?.id === result.search?.id ? previous : []), ...result.batch].map(b => [b.id, b])).values()]));
     setAdded(previous => new Set([...previous, ...result.batch.filter((b) => b.is_lead).map((b) => b.id)]));
+    setForm({ city: result.search.city, state: result.search.state, niche: result.search.niche });
   }
 
   useEffect(() => {
@@ -88,14 +86,12 @@ function SearchPage() {
 
   useEffect(() => {
     if (restoring) return;
-    const saved = writeSearchSession(() => window.sessionStorage, { form, searchId: search?.id ?? null, batchIds: batch.map(b => b.id) });
-    setStorageWarning(saved ? '' : 'Não foi possível guardar a busca nesta aba. Os resultados continuam aqui, mas podem não voltar ao sair desta página.');
+    writeSearchSession(() => window.sessionStorage, { form, searchId: search?.id ?? null, batchIds: batch.map(b => b.id) });
   }, [form, search, batch, restoring]);
 
   function reset() {
     writeSearchSession(() => window.sessionStorage, null);
     setSearch(null); setBatch([]); setAdded(new Set()); setLeaving(new Set());
-    setHasSearched(false);
     setForm(emptyForm); setStatus(""); setError(""); setConfirming("");
   }
 
@@ -125,7 +121,7 @@ function SearchPage() {
     for (let i = 0; i < 90; i += 1) {
       await new Promise((resolve) => setTimeout(resolve, 4000));
       if (!alive.current) throw new Error("A busca foi interrompida.");
-      const result = await pollSearch({ data: { id: searchId }, fetch: diagnosticFetch });
+      const result = await pollSearch({ data: { id: searchId } });
       if (result.search.status !== "running") return result;
     }
     throw new Error("A busca demorou demais. Tente novamente.");
@@ -135,21 +131,16 @@ function SearchPage() {
     if (busy.current) return;
     busy.current = true;
     setPending(true);
-    setHasSearched(true);
     setError("");
     setConfirming("");
     setStatus("Buscando empresas...");
     try {
-      void leads.refetch();
-      void audits.refetch();
-      const checkedKey = await keyQuery.refetch({ throwOnError: true });
-      if (!checkedKey.data?.configured) throw new Error('A chave do Apify está ausente.');
-      let result = await beginSearch({ data: input, fetch: diagnosticFetch });
+      let result = await beginSearch({ data: input });
       if (result.search.status === "running") result = await wait(result.search.id);
       show(result);
-      setStatus(!result.batch.length && result.search.status === "exhausted" ? "Não há mais resultados para esta busca." : "");
+      setStatus(result.search.status === "exhausted" ? "Não há mais resultados para esta busca." : "");
     } catch (e) {
-      setError(queryErrorMessage(e));
+      setError(e instanceof Error ? e.message : "Não foi possível buscar.");
       setStatus("");
     } finally {
       busy.current = false;
@@ -157,25 +148,14 @@ function SearchPage() {
     }
   }
 
-  const initialQueries = [
-    { label: 'Verificar o acesso à busca', query: keyQuery },
-    { label: 'Carregar seus leads', query: leads },
-    { label: 'Carregar suas auditorias', query: audits },
-  ];
-  const failedQueries = hasSearched ? initialQueries.filter(({ query }) => query.isError) : [];
-  const retrying = initialQueries.some(({ query }) => query.isFetching);
+  const configured = keyQuery.data?.configured ?? false;
+  const canFetchMore = search?.status === "ready";
 
   return (
     <div className="app-container py-14">
       <h1 className="page-title">Olá, <strong>Leandro</strong> 👋</h1>
-      {hasSearched && <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.isError || audits.isError ? 'Não foi possível atualizar seus números. Veja o motivo abaixo.' : leads.data && audits.data ? (() => { const pend = audits.data.filter(a => a.status === 'não enviada').length; return `${plural(leads.data.length, 'lead salvo', 'leads salvos')} · ${plural(pend, 'auditoria não enviada', 'auditorias não enviadas')}`; })() : 'Carregando seus números...'}</p>}
-      {failedQueries.length > 0 && <section role="alert" className="mb-6 rounded-xl border border-destructive p-4 text-sm">
-        <p className="font-medium">Não foi possível carregar parte da página.</p>
-        <ul className="mt-3 space-y-2">{failedQueries.map(({ label, query }) => <li key={label}><strong>{label}:</strong> <span className="break-words whitespace-pre-wrap">{queryErrorMessage(query.error)}</span></li>)}</ul>
-        <Button variant="bordered" size="sm" className="mt-4" disabled={retrying} onClick={() => { void Promise.allSettled(failedQueries.map(({ query }) => query.refetch())); }}>{retrying ? 'Tentando novamente...' : 'Tentar novamente'}</Button>
-      </section>}
-      {hasSearched && keyQuery.isFetching && <p role="status" className="mb-6 text-sm text-muted-foreground">Verificando o acesso à busca...</p>}
-      {hasSearched && keyQuery.data?.configured === false && <p role="alert" className="mb-6 text-sm text-destructive">A chave do Apify está ausente.</p>}
+      <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.data && audits.data ? (() => { const pend = audits.data.filter(a => a.status === 'não enviada').length; return `${plural(leads.data.length, 'lead salvo', 'leads salvos')} · ${plural(pend, 'auditoria não enviada', 'auditorias não enviadas')}`; })() : 'Carregando seus números...'}</p>
+      {keyQuery.data?.configured === false && <p role="alert" className="mb-6 text-sm text-destructive">A chave do Apify está ausente.</p>}
       <form
         className="search-panel mb-10"
         onSubmit={(e) => {
@@ -185,29 +165,30 @@ function SearchPage() {
       >
         <div className="grid gap-5 sm:grid-cols-3">
           <label className="block">
-            <span className="field-label">País</span>
+            <span className="field-label">Cidade</span>
             <input
               className="field"
-              value={form.country}
-              onChange={(e) => setForm({ ...form, country: e.target.value })}
-              placeholder="Brasil"
+              value={form.city}
+              onChange={(e) => setForm({ ...form, city: e.target.value })}
+              placeholder="Sua cidade"
               required
               minLength={2}
               maxLength={100}
             />
           </label>
           <label className="block">
-            <span className="field-label">Estado e cidade</span>
-            <p id="location-help" className="mb-2 text-xs text-muted-foreground">Escreva cidade e estado, por exemplo "Florianópolis, SC". Fora do Brasil, escreva a região e a cidade como se usa no país.</p>
-            <input
+            <span className="field-label">UF</span>
+            <select
               className="field"
-              aria-describedby="location-help"
-              aria-label="Estado e cidade"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="Florianópolis, SC"
-              required minLength={2} maxLength={200}
-            />
+              value={form.state}
+              onChange={(e) => setForm({ ...form, state: e.target.value })}
+            >
+              {states.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="block">
             <span className="field-label">Nicho</span>
@@ -223,9 +204,19 @@ function SearchPage() {
           </label>
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button variant="solid" type="submit" disabled={pending}>
+          <Button variant="solid" type="submit" disabled={!configured || pending}>
             {pending ? "Aguarde..." : "Buscar empresas"}
           </Button>
+          {canFetchMore && (
+            <Button
+              variant="bordered"
+              type="button"
+              disabled={!configured || pending}
+              onClick={() => void run(form)}
+            >
+              Mostrar mais 10
+            </Button>
+          )}
           {search && (
             <Button variant="quiet" type="button" disabled={pending} onClick={reset}>
               Nova busca
@@ -248,7 +239,6 @@ function SearchPage() {
           {error}
         </p>
       )}
-      {storageWarning && <p role="alert" className="mb-8 text-sm text-destructive">{storageWarning}</p>}
       {batch.length > 0 && (
         <div className="space-y-4">
           {batch.map((business, index) => (
@@ -273,7 +263,7 @@ function SearchPage() {
           <p className="text-muted-foreground">
             {search.status === "exhausted"
               ? "Não há mais resultados para esta busca."
-              : "Nenhuma empresa sem site nesta busca."}
+              : "Nenhuma empresa nesta leva. Mostre mais resultados para continuar."}
           </p>
         </div>
       )}
@@ -311,7 +301,7 @@ function BusinessCard({
 
   return (
     <article
-      className={`card-green card-enter [content-visibility:auto] [contain-intrinsic-size:auto_420px]${leaving ? " card-leaving" : ""}`}
+      className={`card-green card-enter${leaving ? " card-leaving" : ""}`}
       style={{ animationDelay: `${(index % 10) * 40}ms` }}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-4">

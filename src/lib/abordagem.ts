@@ -3,7 +3,6 @@ import { placeData, type Business } from './prospeccao';
 import { unsupportedNumbers } from './message-numbers';
 import { displayCity, displayName, formatRating } from './format';
 import { photoCount } from './audit-data';
-import { isBrazil } from './search-input';
 export type Rules = Database['public']['Tables']['message_rules']['Row'];
 export type Audit = Database['public']['Tables']['audits']['Row'];
 
@@ -72,15 +71,10 @@ export function validateMessage(message: string, rules: Rules, sources: string[]
   return errors;
 }
 
-/** Never infer a foreign dialing code or insert a subscriber digit. */
-export function whatsappNumber(phone: unknown, country = 'Brasil'): { number: string | null; reason: string } {
+/** Digits exactly as returned by Maps, with 55 in front of the DDD. Never adds other digits. */
+export function whatsappNumber(phone: unknown): { number: string | null; reason: string } {
   if (typeof phone !== 'string' || !phone.trim()) return { number: null, reason: 'O Maps não informou telefone.' };
   let digits = phone.replace(/\D/g, '');
-  if (!isBrazil(country)) {
-    if (!/^\+\s*[1-9]/.test(phone.trim())) return { number: null, reason: 'Número sem código do país, confira antes de enviar' };
-    if (digits.length < 7 || digits.length > 15) return { number: null, reason: 'O telefone não tem código do país e número completos.' };
-    return { number: digits, reason: '' };
-  }
   if (phone.trim().startsWith('+') || digits.length > 11) {
     if (!digits.startsWith('55')) return { number: null, reason: 'O telefone não é do Brasil.' };
     digits = digits.slice(2);

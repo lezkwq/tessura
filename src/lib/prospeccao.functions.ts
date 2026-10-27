@@ -2,18 +2,14 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { assertOwner, startRun, readRun, readDataset, cleanPlace, baseInput } from './apify.server';
-import { placeData, weightedScore, websiteType, type Business } from './prospeccao';
-import { actorSearchInput, countryCode, searchInputSchema } from './search-input';
+import { states, weightedScore, websiteType, type Business } from './prospeccao';
 export const keyStatus=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{await assertOwner(context.supabase);return {configured:Boolean(process.env['APIFY_TOKEN'])};});
 export const latestSearch=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{ const {data,error}=await context.supabase.from('searches').select('*').order('updated_at',{ascending:false}).limit(1).maybeSingle(); if(error)throw new Error('Não foi possível carregar a última busca.');return data; });
-const searchSchema=searchInputSchema;
+const searchSchema=z.object({city:z.string().trim().min(2).max(100),state:z.string().refine(s=>states.includes(s)),niche:z.string().trim().min(2).max(120)});
 const idSchema=z.object({id:z.string().uuid()});
 export const beginSearch=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>searchSchema.parse(input)).handler(async({data,context})=>{
  const db=context.supabase; await assertOwner(db);
- const code=countryCode(data.country);
- if(!code)throw new Error('País não reconhecido.');
- // Existing two-letter search state stores the country code; city stores the full free-form location.
- const normalized={city:data.location.toLocaleLowerCase('pt-BR'),state:code,niche:data.niche.toLocaleLowerCase('pt-BR')};
+ const normalized={city:data.city.toLocaleLowerCase('pt-BR'),state:data.state,niche:data.niche.toLocaleLowerCase('pt-BR')};
  const existing=await db.from('searches').select('*').match({...normalized,user_id:context.userId}).maybeSingle();
  if(existing.error)throw new Error('Não foi possível carregar a busca.');
  let search=existing.data;
@@ -21,15 +17,14 @@ export const beginSearch=createServerFn({method:'POST'}).middleware([requireSupa
   search=created.data??(await db.from('searches').select('*').match({...normalized,user_id:context.userId}).single()).data;
  }
  if(!search)throw new Error('Não foi possível iniciar a busca.');
- if(search.status==='running')return {search,batch:[] as Business[]};
+ if(search.status==='running'||search.status==='exhausted')return {search,batch:[] as Business[]};
  const {data:batch,error}=await db.rpc('take_batch',{p_search:search.id});
  if(error)throw new Error('Não foi possível carregar o lote.');
  if(batch?.length)return {search,batch};
- if(search.status==='exhausted')return {search,batch:[] as Business[]};
  const claim=await db.from('searches').update({status:'running',run_id:null,dataset_id:null,updated_at:new Date().toISOString()}).eq('id',search.id).in('status',['idle','ready','failed']).select().maybeSingle();
  if(!claim.data) return {search:{...search,status:'running' as const},batch:[] as Business[]};
  try {
-  const run=await startRun({...baseInput,...actorSearchInput(data)});
+  const run=await startRun({...baseInput,searchStringsArray:[data.niche],locationQuery:`${data.city}, ${data.state}, Brasil`,maxCrawledPlacesPerSearch:120,maxReviews:0,maxImages:0,scrapeContacts:false});
   const saved=await db.from('searches').update({run_id:run.id,dataset_id:run.defaultDatasetId}).eq('id',search.id).select().single();
   if(saved.error)throw new Error('Não foi possível guardar o andamento da busca.');
   return {search:saved.data,batch:[] as Business[]};
@@ -48,7 +43,7 @@ export const pollSearch=createServerFn({method:'POST'}).middleware([requireSupab
  const candidates=rows.flatMap(row=>{
   const kind=websiteType(row['website']);
   if(!kind||typeof row['placeId']!=='string')return [];
-  return [{place_id:row['placeId'],data:{...placeData(cleanPlace(row)),countryCode:row['countryCode']??search.state},website_type:kind,score:weightedScore(row['totalScore'],row['reviewsCount'])}];
+  return [{place_id:row['placeId'],data:cleanPlace(row),website_type:kind,score:weightedScore(row['totalScore'],row['reviewsCount'])}];
  });
  const imported=await db.rpc('finish_search',{p_search:search.id,p_run:search.run_id,p_places:candidates});
  if(imported.error)throw new Error('Não foi possível guardar os resultados.');
@@ -85,8 +80,7 @@ export const pollLead=createServerFn({method:'POST'}).middleware([requireSupabas
  if(run.status!=='SUCCEEDED')return lead;
  const row=(await readDataset(run.defaultDatasetId)).find(r=>r['placeId']===lead.place_id);
  if(!row){await db.from('businesses').update({enrichment_status:'failed'}).eq('id',lead.id);throw new Error('O Apify não devolveu os detalhes desta empresa.');}
- const previous=placeData(lead.data);
- const saved=await db.from('businesses').update({data:{...placeData(cleanPlace(row)),countryCode:row['countryCode']??previous['countryCode']??'BR'},enrichment_status:'ready',updated_at:new Date().toISOString()}).eq('id',lead.id).select().single();
+ const saved=await db.from('businesses').update({data:cleanPlace(row),enrichment_status:'ready',updated_at:new Date().toISOString()}).eq('id',lead.id).select().single();
  if(!saved.data)throw new Error('Não foi possível salvar os detalhes.');return saved.data;
 });
 export const discardBusiness=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>z.object({placeId:z.string().min(1).max(300)}).parse(input)).handler(async({data,context})=>{
