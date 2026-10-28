@@ -43,6 +43,13 @@
       "when": 1792499956852,
       "tag": "0005_one_audit_per_lead",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793154506810,
+      "tag": "0006_deliver_all_results_at_once",
+      "breakpoints": true
     }
   ]
 }
