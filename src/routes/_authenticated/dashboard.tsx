@@ -270,7 +270,7 @@ function SearchPage() {
           <p className="text-muted-foreground">
             {search.status === "exhausted"
               ? "Não há mais resultados para esta busca."
-              : "Nenhuma empresa nesta leva. Mostre mais resultados para continuar."}
+              : "Nenhuma empresa sem site próprio encontrada nesta busca."}
           </p>
         </div>
       )}
