@@ -149,13 +149,30 @@ function SearchPage() {
   }
 
   const configured = keyQuery.data?.configured ?? false;
-  const canFetchMore = search?.status === "ready";
 
   return (
     <div className="app-container py-14">
       <h1 className="page-title">Olá, <strong>Leandro</strong> 👋</h1>
       <p className="mt-3 mb-8 text-sm text-muted-foreground">{leads.data && audits.data ? (() => { const pend = audits.data.filter(a => a.status === 'não enviada').length; return `${plural(leads.data.length, 'lead salvo', 'leads salvos')} · ${plural(pend, 'auditoria não enviada', 'auditorias não enviadas')}`; })() : 'Carregando seus números...'}</p>
+      {keyQuery.isLoading && (
+        <p role="status" className="loading-text mb-6 text-sm text-muted-foreground">Verificando a chave do Apify...</p>
+      )}
+      {keyQuery.isError && (
+        <p role="alert" className="mb-6 text-sm text-destructive">
+          {keyQuery.error instanceof Error ? keyQuery.error.message : "Não foi possível verificar a chave do Apify."}
+        </p>
+      )}
       {keyQuery.data?.configured === false && <p role="alert" className="mb-6 text-sm text-destructive">A chave do Apify está ausente.</p>}
+      {leads.isError && (
+        <p role="alert" className="mb-6 text-sm text-destructive">
+          {leads.error instanceof Error ? leads.error.message : "Não foi possível carregar os leads."}
+        </p>
+      )}
+      {audits.isError && (
+        <p role="alert" className="mb-6 text-sm text-destructive">
+          {audits.error instanceof Error ? audits.error.message : "Não foi possível carregar as auditorias."}
+        </p>
+      )}
       <form
         className="search-panel mb-10"
         onSubmit={(e) => {
@@ -207,16 +224,6 @@ function SearchPage() {
           <Button variant="solid" type="submit" disabled={!configured || pending}>
             {pending ? "Aguarde..." : "Buscar empresas"}
           </Button>
-          {canFetchMore && (
-            <Button
-              variant="bordered"
-              type="button"
-              disabled={!configured || pending}
-              onClick={() => void run(form)}
-            >
-              Mostrar mais 10
-            </Button>
-          )}
           {search && (
             <Button variant="quiet" type="button" disabled={pending} onClick={reset}>
               Nova busca
