@@ -314,6 +314,33 @@ export type Database = {
         }
       }
       is_owner: { Args: never; Returns: boolean }
+      take_all: {
+        Args: { p_search: string }
+        Returns: {
+          audit_notes: Json
+          city: string
+          created_at: string
+          data: Json
+          enrichment_dataset_id: string | null
+          enrichment_run_id: string | null
+          enrichment_status: string
+          id: string
+          is_lead: boolean
+          niche: string
+          place_id: string
+          score: number
+          state: string
+          updated_at: string
+          user_id: string
+          website_type: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "businesses"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       take_batch: {
         Args: { p_search: string }
         Returns: {

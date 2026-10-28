@@ -18,8 +18,8 @@ export const beginSearch=createServerFn({method:'POST'}).middleware([requireSupa
  }
  if(!search)throw new Error('Não foi possível iniciar a busca.');
  if(search.status==='running'||search.status==='exhausted')return {search,batch:[] as Business[]};
- const {data:batch,error}=await db.rpc('take_batch',{p_search:search.id});
- if(error)throw new Error('Não foi possível carregar o lote.');
+ const {data:batch,error}=await db.rpc('take_all',{p_search:search.id});
+ if(error)throw new Error('Não foi possível carregar os resultados.');
  if(batch?.length)return {search,batch};
  const claim=await db.from('searches').update({status:'running',run_id:null,dataset_id:null,updated_at:new Date().toISOString()}).eq('id',search.id).in('status',['idle','ready','failed']).select().maybeSingle();
  if(!claim.data) return {search:{...search,status:'running' as const},batch:[] as Business[]};
