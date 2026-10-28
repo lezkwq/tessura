@@ -39,11 +39,12 @@ function RulesPage() {
       <label className="data-label block" htmlFor="ins">Instruções enviadas à IA</label>
       <textarea id="ins" className={`${field} min-h-[320px]`} value={f.instructions} onChange={(e) => setForm({ ...f, instructions: e.target.value })} />
       <div className="mt-6 grid gap-4 sm:grid-cols-4">
-        <label className="data-label">Mínimo de palavras<input type="number" className={field} value={f.min_words} onChange={(e) => setForm({ ...f, min_words: Number(e.target.value) })} /></label>
-        <label className="data-label">Máximo de palavras<input type="number" className={field} value={f.max_words} onChange={(e) => setForm({ ...f, max_words: Number(e.target.value) })} /></label>
-        <label className="data-label">Abertura obrigatória<input className={field} value={f.opening} onChange={(e) => setForm({ ...f, opening: e.target.value })} /></label>
+        <label className="data-label">Mínimo de palavras<input type="number" className={`${field} opacity-50`} value={35} readOnly /></label>
+        <label className="data-label">Máximo de palavras<input type="number" className={`${field} opacity-50`} value={60} readOnly /></label>
+        <label className="data-label">Abertura obrigatória<input className={`${field} opacity-50`} value="Olá" readOnly /></label>
         <label className="data-label">Quem assina<input className={field} value={f.signer} onChange={(e) => setForm({ ...f, signer: e.target.value })} /></label>
       </div>
+      <p className="mt-3 text-sm text-muted-foreground">Abertura e limite de palavras são fixos no código e não mudam por aqui.</p>
       <label className="data-label mt-6 block" htmlFor="ban">Palavras proibidas (uma por linha)</label>
       <textarea id="ban" className={`${field} min-h-[160px]`} value={banned} onChange={(e) => setBanned(e.target.value)} />
       <div className="mt-6 flex gap-3">
