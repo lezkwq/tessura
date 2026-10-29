@@ -1,5 +1,5 @@
 # Prospecção
-- [ ] Repetição da Busca: entregar toda a reserva elegível antes de chamar Apify; migração nova, testes na reserva de hamburgueria em Balneário Camboriú sem apagar dados.
+- [x] Repetição da Busca: migração nova e entrega completa; navegador confirmou 74 empresas em três buscas e volta de Leads; exclusões e finish_search testados com rollback (72), sem apagar dados; 13 testes automáticos passaram.
 - [x] Secure project-secret setup and single-user login.
 - [x] Documented Apify searches, filtered reserve, ten-item batches and discard.
 - [x] Lead enrichment, list and detail.
