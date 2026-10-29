@@ -12,7 +12,7 @@
 ## Application architecture
 - Use TanStack server functions with owner authorization for all business data and Apify calls, because workspace credentials must never reach the browser.
 - Keep actor normalization and website filtering in shared pure helpers, because lists and lead detail must present only returned data.
-- Persist actor jobs, global business identities and per-search delivery records in Cloud, because asynchronous runs and batch deduplication must survive reloads.
+- Persist actor jobs, global business identities and per-search reserves in Cloud; resolve eligible reserves before actor runs and replace the visible result set on each search, because repeat searches must not retain stale exclusions or trigger unnecessary jobs.
 - Read the Apify token only from the APIFY_TOKEN backend secret and call api.apify.com from server code, because the owner supplies their own key and it must never reach the browser.
 - Use one auth-state subscriber in the root provider and a private owner role assigned transactionally on first registration, because this tool permits exactly one account.
 - Persist Busca form, active search ID and shown batch IDs only in guarded sessionStorage; refresh only those IDs from reserves, because new tab sessions must never restore database history while reserves retain delivery deduplication.
