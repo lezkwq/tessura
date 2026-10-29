@@ -63,7 +63,7 @@ function SearchPage() {
   function show(result: { search: Search | null; batch: Business[] }) {
     if (!result.search) return;
     setSearch(result.search);
-    setBatch(previous => sortByScore([...new Map([...(search?.id === result.search?.id ? previous : []), ...result.batch].map(b => [b.id, b])).values()]));
+    setBatch(sortByScore(result.batch));
     setAdded(previous => new Set([...previous, ...result.batch.filter((b) => b.is_lead).map((b) => b.id)]));
     setForm({ city: result.search.city, state: result.search.state, niche: result.search.niche });
   }

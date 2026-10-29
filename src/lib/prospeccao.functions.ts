@@ -17,11 +17,11 @@ export const beginSearch=createServerFn({method:'POST'}).middleware([requireSupa
   search=created.data??(await db.from('searches').select('*').match({...normalized,user_id:context.userId}).single()).data;
  }
  if(!search)throw new Error('Não foi possível iniciar a busca.');
- if(search.status==='running'||search.status==='exhausted')return {search,batch:[] as Business[]};
  const {data:batch,error}=await db.rpc('take_all',{p_search:search.id});
  if(error)throw new Error('Não foi possível carregar os resultados.');
- if(batch?.length)return {search,batch};
- const claim=await db.from('searches').update({status:'running',run_id:null,dataset_id:null,updated_at:new Date().toISOString()}).eq('id',search.id).in('status',['idle','ready','failed']).select().maybeSingle();
+ if(batch?.length)return {search:{...search,status:'ready'},batch};
+ if(search.status==='running')return {search,batch:[] as Business[]};
+ const claim=await db.from('searches').update({status:'running',run_id:null,dataset_id:null,updated_at:new Date().toISOString()}).eq('id',search.id).in('status',['idle','ready','failed','exhausted']).select().maybeSingle();
  if(!claim.data) return {search:{...search,status:'running' as const},batch:[] as Business[]};
  try {
   const run=await startRun({...baseInput,searchStringsArray:[data.niche],locationQuery:`${data.city}, ${data.state}, Brasil`,maxCrawledPlacesPerSearch:120,maxReviews:0,maxImages:0,scrapeContacts:false});
